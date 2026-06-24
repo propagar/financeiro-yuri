@@ -6,6 +6,7 @@ import AppLayout from './components/AppLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
+import Recurrences from './pages/Recurrences'
 import Accounts from './pages/Accounts'
 import Categories from './pages/Categories'
 import ProfilesPage from './pages/ProfilesPage'
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/" element={<PrivateArea />}>
               <Route index element={<Dashboard />} />
               <Route path="lancamentos" element={<Transactions />} />
+              <Route path="recorrencias" element={<Recurrences />} />
               <Route path="contas" element={<Accounts />} />
               <Route path="categorias" element={<Categories />} />
               <Route path="perfis" element={<ProfilesPage />} />

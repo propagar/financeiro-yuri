@@ -336,6 +336,38 @@
   background: var(--color-bg-sunken);
 }
 
+.recurring-icon {
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+.checkbox-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+}
+
+.recurring-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-sunken);
+  border: 1px solid var(--color-border);
+}
+
+.recurring-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
 .transactions-page .btn-primary {
   padding: 10px 18px;
   font-size: 13.5px;

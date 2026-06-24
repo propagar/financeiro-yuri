@@ -7,6 +7,11 @@ import './Transactions.css'
 
 const PAYMENT_METHODS = ['Pix', 'Dinheiro', 'Débito', 'Crédito', 'Boleto', 'Transferência']
 const STATUSES = ['Pago', 'Pendente', 'A pagar', 'Cancelado']
+const FREQUENCIES = [
+  { value: 'semanal', label: 'Semanal' },
+  { value: 'mensal', label: 'Mensal' },
+  { value: 'anual', label: 'Anual' },
+]
 
 export default function Transactions() {
   const { transactions, loading, reload } = useTransactions()
@@ -95,6 +100,7 @@ export default function Transactions() {
                 <tr key={t.id}>
                   <td>{formatDate(t.occurred_on)}</td>
                   <td className="col-name">
+                    {t.recurrence_id && <span className="recurring-icon" title="Lançamento recorrente">🔁</span>}
                     {t.name}
                     {(t.mercado_items?.[0]?.count ?? 0) > 0 && (
                       <button
@@ -208,6 +214,8 @@ function TransactionForm({ transaction, onClose, onSaved }) {
   const [status, setStatus] = useState(transaction?.status || 'Pago')
   const [establishment, setEstablishment] = useState(transaction?.establishment || '')
   const [notes, setNotes] = useState(transaction?.notes || '')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [frequency, setFrequency] = useState('mensal')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -230,6 +238,38 @@ function TransactionForm({ transaction, onClose, onSaved }) {
     }
 
     setSaving(true)
+
+    // Lançamento recorrente novo: cria a regra e deixa o banco gerar as próximas ocorrências
+    if (!isEdit && isRecurring) {
+      const { error: err } = await supabase.from('recurrences').insert({
+        profile_id: profileId,
+        account_id: accountId || null,
+        category_id: categoryId || null,
+        name: name.trim(),
+        kind,
+        amount: Number(amount),
+        frequency,
+        payment_method: paymentMethod || null,
+        establishment: establishment.trim() || null,
+        notes: notes.trim() || null,
+        start_date: occurredOn,
+        next_due_date: occurredOn,
+      })
+
+      if (err) {
+        setSaving(false)
+        setError(err.message)
+        return
+      }
+
+      // Gera imediatamente as ocorrências dos próximos 3 meses, sem esperar o job noturno
+      await supabase.rpc('generate_recurring_transactions')
+
+      setSaving(false)
+      onSaved()
+      return
+    }
+
     const payload = {
       profile_id: profileId,
       account_id: accountId || null,
@@ -327,11 +367,40 @@ function TransactionForm({ transaction, onClose, onSaved }) {
             </label>
             <label>
               Status
-              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} disabled={isRecurring}>
                 {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </label>
           </div>
+
+          {!isEdit && (
+            <div className="recurring-box">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={isRecurring}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                />
+                Tornar recorrente
+              </label>
+
+              {isRecurring && (
+                <>
+                  <label>
+                    Repetir
+                    <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+                      {FREQUENCIES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                    </select>
+                  </label>
+                  <p className="recurring-hint">
+                    A partir da data acima, o sistema vai gerar automaticamente os próximos
+                    lançamentos com status <strong>"A pagar"</strong>, sempre com 3 meses de antecedência,
+                    pra te ajudar a controlar e lembrar dos pagamentos.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           <label>
             Estabelecimento (opcional)

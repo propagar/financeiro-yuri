@@ -1,0 +1,95 @@
+.recurrences-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recurrence-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.recurrence-inactive {
+  opacity: 0.55;
+}
+
+.recurrence-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.recurrence-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.recurrence-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recurrence-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recurrence-meta {
+  font-size: 12px;
+  color: var(--color-text-faint);
+}
+
+.recurrence-amount {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.recurrence-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.recurrence-actions button {
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recurrence-actions button:hover {
+  background: var(--color-bg-sunken);
+}
+
+.recurrence-actions button.danger {
+  color: var(--color-expense);
+  border-color: var(--color-expense);
+}
+
+.recurrence-actions button.danger:hover {
+  background: var(--color-expense-soft);
+}
