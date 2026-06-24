@@ -1,0 +1,155 @@
+/* ============================================================================
+   DESIGN SYSTEM — Portal Financeiro
+   Conceito: "Caderno de contas" — referência ao livro-caixa físico, mas com
+   precisão digital. Tipografia serifada para números importantes (como em
+   extratos bancários impressos e talões), sans-serif utilitária para a
+   interface. Acento em verde-azulado (teal escuro) que remete a carimbo/selo
+   de "conferido", e não ao verde-dinheiro genérico de apps financeiros.
+   ============================================================================ */
+
+:root {
+  /* ---- Paleta: modo claro (padrão) ---- */
+  --color-bg: #faf8f4;
+  --color-bg-elevated: #ffffff;
+  --color-bg-sunken: #f0ece3;
+  --color-border: #e2dccc;
+  --color-border-strong: #c9c0a8;
+
+  --color-text: #211d14;
+  --color-text-muted: #6b6253;
+  --color-text-faint: #9b9181;
+
+  --color-accent: #0f5e56;
+  --color-accent-strong: #0a4640;
+  --color-accent-soft: #d9ece8;
+
+  --color-income: #1d7a4c;
+  --color-income-soft: #dcf0e3;
+  --color-expense: #a6432f;
+  --color-expense-soft: #f6e2dc;
+  --color-pending: #b8862c;
+  --color-pending-soft: #f5ead2;
+
+  --color-pf: #5b4ccb;
+  --color-pf-soft: #e7e3fb;
+  --color-pj: #0f5e56;
+  --color-pj-soft: #d9ece8;
+
+  --shadow-card: 0 1px 2px rgba(33, 29, 20, 0.06), 0 1px 8px rgba(33, 29, 20, 0.04);
+  --shadow-elevated: 0 4px 24px rgba(33, 29, 20, 0.12);
+
+  --font-display: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --color-bg: #15171a;
+  --color-bg-elevated: #1d2024;
+  --color-bg-sunken: #0f1113;
+  --color-border: #2c3036;
+  --color-border-strong: #3d424a;
+
+  --color-text: #ede9e0;
+  --color-text-muted: #a3a097;
+  --color-text-faint: #6f6c63;
+
+  --color-accent: #4fd1c0;
+  --color-accent-strong: #7ee3d4;
+  --color-accent-soft: #1c3733;
+
+  --color-income: #5fcf8e;
+  --color-income-soft: #1a3326;
+  --color-expense: #e8836b;
+  --color-expense-soft: #3a2420;
+  --color-pending: #e0b65c;
+  --color-pending-soft: #3a3018;
+
+  --color-pf: #a99bf5;
+  --color-pf-soft: #2a2640;
+  --color-pj: #4fd1c0;
+  --color-pj-soft: #1c3733;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 8px rgba(0, 0, 0, 0.2);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Scrollbar discreta */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 8px;
+}
+
+.full-page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}

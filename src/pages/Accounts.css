@@ -1,0 +1,146 @@
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.account-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.account-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.account-card-top h3 {
+  margin: 0 0 2px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.account-bank {
+  font-size: 12px;
+  color: var(--color-text-faint);
+}
+
+.account-profile-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.account-balance {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-balance-label {
+  font-size: 11.5px;
+  color: var(--color-text-faint);
+}
+
+.account-balance-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.account-credit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.credit-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-bg-sunken);
+  overflow: hidden;
+}
+
+.credit-bar-fill {
+  height: 100%;
+  background: var(--color-expense);
+  border-radius: 999px;
+}
+
+.account-credit-label {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.card-status {
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.card-status-ativa, .card-status-desbloqueado {
+  background: var(--color-income-soft);
+  color: var(--color-income);
+}
+
+.card-status-bloqueado {
+  background: var(--color-expense-soft);
+  color: var(--color-expense);
+}
+
+.account-card-footer {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  margin-top: auto;
+}
+
+.account-card-footer button {
+  flex: 1;
+  padding: 7px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.account-card-footer button:hover {
+  background: var(--color-bg-sunken);
+}
+
+.account-card-footer button.danger {
+  color: var(--color-expense);
+  border-color: var(--color-expense);
+}
+
+.account-card-footer button.danger:hover {
+  background: var(--color-expense-soft);
+}
+
+.checkbox-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+}
