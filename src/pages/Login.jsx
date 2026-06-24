@@ -1,15 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import './Login.css'
 
 export default function Login() {
-  const { signInWithPassword, signUpWithPassword, signInWithGoogle } = useAuth()
+  const { user, signInWithPassword, signUpWithPassword, signInWithGoogle } = useAuth()
+  const navigate = useNavigate()
   const [mode, setMode] = useState('signin') // 'signin' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+
+  // Redireciona automaticamente assim que o login (ou cadastro já confirmado) é concluído
+  useEffect(() => {
+    if (user) navigate('/', { replace: true })
+  }, [user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,13 +26,25 @@ export default function Login() {
     setBusy(true)
 
     const action = mode === 'signin' ? signInWithPassword : signUpWithPassword
-    const { error: err } = await action(email, password)
+    const { data, error: err } = await action(email, password)
 
     if (err) {
       setError(traduzErro(err.message))
-    } else if (mode === 'signup') {
-      setInfo('Conta criada! Verifique seu e-mail para confirmar o cadastro.')
+      setBusy(false)
+      return
     }
+
+    if (mode === 'signup') {
+      if (data?.session) {
+        // Projeto sem confirmação de e-mail obrigatória: já vem logado
+        navigate('/', { replace: true })
+      } else {
+        setInfo('Conta criada! Verifique seu e-mail para confirmar o cadastro.')
+      }
+    } else {
+      navigate('/', { replace: true })
+    }
+
     setBusy(false)
   }
 
@@ -64,15 +84,26 @@ export default function Login() {
           </label>
           <label>
             Senha
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-            />
+            <div className="password-field">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
           </label>
 
           {error && <p className="login-error">{error}</p>}
@@ -102,6 +133,24 @@ function traduzErro(msg) {
     'Email not confirmed': 'Confirme seu e-mail antes de entrar.',
   }
   return map[msg] || msg
+}
+
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 4.22-5.06M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  )
 }
 
 function GoogleIcon() {
