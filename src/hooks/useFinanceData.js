@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProfiles } from '../contexts/ProfileContext'
+import { useTransactionModal } from '../contexts/TransactionModalContext'
 
 /**
  * Resolve a lista de profile_ids relevante para a consulta atual:
@@ -15,6 +16,7 @@ function useRelevantProfileIds() {
 
 export function useTransactions({ from, to } = {}) {
   const profileIds = useRelevantProfileIds()
+  const { version } = useTransactionModal()
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -43,7 +45,7 @@ export function useTransactions({ from, to } = {}) {
 
   useEffect(() => {
     reload()
-  }, [reload])
+  }, [reload, version])
 
   return { transactions, loading, error, reload }
 }

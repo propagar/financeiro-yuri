@@ -2,12 +2,12 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useProfiles } from '../contexts/ProfileContext'
-import { useState } from 'react'
+import { useTransactionModal } from '../contexts/TransactionModalContext'
+import { useState, useEffect } from 'react'
 import './AppLayout.css'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Painel', icon: '📊', end: true },
-  { to: '/lancamentos', label: 'Lançamentos', icon: '📋' },
   { to: '/recorrencias', label: 'Recorrências', icon: '🔁' },
   { to: '/contas', label: 'Contas', icon: '🏦' },
   { to: '/categorias', label: 'Categorias', icon: '🏷️' },
@@ -18,21 +18,44 @@ export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { profiles, activeProfileId, activeProfile, isConsolidated, selectProfile } = useProfiles()
+  const { openNew } = useTransactionModal()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleSignOut = async () => {
     await signOut()
     navigate('/login')
   }
 
+  const handleNavClick = () => setMobileOpen(false)
+
+  // Fecha o drawer mobile automaticamente ao trocar de rota (clique em link)
+  useEffect(() => {
+    const close = () => setMobileOpen(false)
+    window.addEventListener('popstate', close)
+    return () => window.removeEventListener('popstate', close)
+  }, [])
+
   return (
-    <div className="app-shell">
-      <aside className="app-sidebar">
+    <div className={'app-shell' + (sidebarCollapsed ? ' sidebar-collapsed' : '')}>
+      {mobileOpen && <div className="mobile-overlay" onClick={() => setMobileOpen(false)} />}
+
+      <aside className={'app-sidebar' + (mobileOpen ? ' sidebar-mobile-open' : '')}>
         <div className="sidebar-top">
           <div className="sidebar-brand">
             <span className="sidebar-mark">＄</span>
             <span className="sidebar-title">Financeiro</span>
+            <button
+              className="sidebar-collapse-btn"
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              type="button"
+              title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+              aria-label={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            >
+              {sidebarCollapsed ? '»' : '«'}
+            </button>
           </div>
 
           <ProfileSwitcher
@@ -49,10 +72,11 @@ export default function AppLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={handleNavClick}
               className={({ isActive }) => 'nav-item' + (isActive ? ' nav-item-active' : '')}
             >
               <span className="nav-icon" aria-hidden="true">{item.icon}</span>
-              {item.label}
+              <span className="nav-label">{item.label}</span>
             </NavLink>
           ))}
         </nav>
@@ -60,7 +84,7 @@ export default function AppLayout() {
         <div className="sidebar-bottom">
           <button className="theme-toggle" onClick={toggleTheme} type="button">
             <span aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
-            {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            <span className="nav-label">{theme === 'dark' ? 'Modo claro' : 'Modo escuro'}</span>
           </button>
 
           <div className="user-menu">
@@ -79,11 +103,21 @@ export default function AppLayout() {
 
       <main className="app-main">
         <header className="app-topbar">
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMobileOpen(true)}
+            type="button"
+            aria-label="Abrir menu"
+          >
+            ☰
+          </button>
+
           <div className="topbar-context">
             {isConsolidated ? (
               <>
                 <span className="context-dot context-dot-all" />
-                Visão geral — todos os perfis
+                <span className="context-label">Visão geral — todos os perfis</span>
+                <span className="context-label-short">Geral</span>
               </>
             ) : (
               <>
@@ -91,11 +125,17 @@ export default function AppLayout() {
                   className="context-dot"
                   style={{ background: activeProfile?.color }}
                 />
-                {activeProfile?.icon} {activeProfile?.name}
+                <span className="context-label">{activeProfile?.icon} {activeProfile?.name}</span>
+                <span className="context-label-short">{activeProfile?.icon}</span>
                 <span className="context-type">{activeProfile?.type}</span>
               </>
             )}
           </div>
+
+          <button className="btn-primary topbar-new-btn" onClick={openNew} type="button">
+            <span className="topbar-new-btn-icon">+</span>
+            <span className="topbar-new-btn-label">Novo lançamento</span>
+          </button>
         </header>
 
         <div className="app-content">
@@ -116,15 +156,15 @@ function ProfileSwitcher({ profiles, activeProfileId, isConsolidated, onSelect }
         {isConsolidated ? (
           <>
             <span className="profile-trigger-icon">🌐</span>
-            <span>Visão geral</span>
+            <span className="nav-label">Visão geral</span>
           </>
         ) : (
           <>
             <span className="profile-trigger-icon">{active?.icon}</span>
-            <span>{active?.name}</span>
+            <span className="nav-label">{active?.name}</span>
           </>
         )}
-        <span className="profile-trigger-caret">▾</span>
+        <span className="profile-trigger-caret nav-label">▾</span>
       </button>
 
       {open && (

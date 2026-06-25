@@ -144,3 +144,9 @@
 .checkbox-label input[type="checkbox"] {
   width: auto;
 }
+
+@media (max-width: 600px) {
+  .accounts-grid {
+    grid-template-columns: 1fr;
+  }
+}

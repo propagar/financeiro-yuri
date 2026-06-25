@@ -2,7 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ProfileProvider } from './contexts/ProfileContext'
+import { TransactionModalProvider, useTransactionModal } from './contexts/TransactionModalContext'
 import AppLayout from './components/AppLayout'
+import TransactionForm from './components/TransactionForm'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
@@ -10,6 +12,18 @@ import Recurrences from './pages/Recurrences'
 import Accounts from './pages/Accounts'
 import Categories from './pages/Categories'
 import ProfilesPage from './pages/ProfilesPage'
+
+function GlobalTransactionModal() {
+  const { open, transaction, close, notifySaved } = useTransactionModal()
+  if (!open) return null
+  return (
+    <TransactionForm
+      transaction={transaction}
+      onClose={close}
+      onSaved={() => { notifySaved(); close() }}
+    />
+  )
+}
 
 function PrivateArea() {
   const { user, loading } = useAuth()
@@ -24,7 +38,10 @@ function PrivateArea() {
 
   return (
     <ProfileProvider>
-      <AppLayout />
+      <TransactionModalProvider>
+        <AppLayout />
+        <GlobalTransactionModal />
+      </TransactionModalProvider>
     </ProfileProvider>
   )
 }

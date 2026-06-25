@@ -93,3 +93,18 @@
 .recurrence-actions button.danger:hover {
   background: var(--color-expense-soft);
 }
+
+@media (max-width: 640px) {
+  .recurrence-card {
+    flex-wrap: wrap;
+  }
+  .recurrence-amount {
+    order: 3;
+    margin-left: 46px;
+  }
+  .recurrence-actions {
+    order: 4;
+    width: 100%;
+    margin-left: 46px;
+  }
+}

@@ -146,3 +146,13 @@
   font-size: 12px;
   cursor: pointer;
 }
+
+@media (max-width: 600px) {
+  .profile-row {
+    align-items: flex-start;
+  }
+  .profile-row-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

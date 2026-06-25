@@ -15,6 +15,8 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  transition: width 0.18s ease, padding 0.18s ease;
+  z-index: 40;
 }
 
 .sidebar-top {
@@ -41,6 +43,7 @@
   color: white;
   font-family: var(--font-display);
   font-size: 16px;
+  flex-shrink: 0;
 }
 
 .sidebar-title {
@@ -48,6 +51,36 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text);
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar-collapse-btn {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+/* Mostra o botão de recolher apenas em telas largas (desktop) */
+@media (min-width: 881px) {
+  .sidebar-collapse-btn {
+    display: flex;
+  }
 }
 
 /* ---------- Profile switcher ---------- */
@@ -70,7 +103,7 @@
   color: var(--color-text);
 }
 
-.profile-trigger span:nth-child(2) {
+.profile-trigger .nav-label {
   flex: 1;
   text-align: left;
   overflow: hidden;
@@ -94,6 +127,7 @@
   box-shadow: var(--shadow-elevated);
   padding: 6px;
   z-index: 30;
+  min-width: 220px;
 }
 
 .profile-dropdown-divider {
@@ -153,6 +187,7 @@
   font-size: 13.5px;
   font-weight: 500;
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -172,6 +207,7 @@
 
 .nav-icon {
   font-size: 15px;
+  flex-shrink: 0;
 }
 
 /* ---------- Sidebar bottom ---------- */
@@ -195,6 +231,7 @@
   color: var(--color-text-muted);
   cursor: pointer;
   text-align: left;
+  white-space: nowrap;
 }
 
 .theme-toggle:hover {
@@ -286,8 +323,31 @@
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
+  gap: 14px;
   padding: 0 28px;
   background: var(--color-bg-elevated);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  color: var(--color-text);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--color-bg-sunken);
 }
 
 .topbar-context {
@@ -297,6 +357,13 @@
   font-size: 13.5px;
   font-weight: 600;
   color: var(--color-text-muted);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.context-label-short {
+  display: none;
 }
 
 .context-dot {
@@ -318,6 +385,24 @@
   background: var(--color-bg-sunken);
   color: var(--color-text-faint);
   margin-left: 2px;
+  flex-shrink: 0;
+}
+
+.topbar-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  width: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.topbar-new-btn-icon {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .app-content {
@@ -328,26 +413,123 @@
   margin: 0 auto;
 }
 
+/* ---------- Sidebar colapsada (desktop) ---------- */
+.sidebar-collapsed .app-sidebar {
+  width: 72px;
+  padding: 20px 10px;
+}
+
+.sidebar-collapsed .sidebar-title,
+.sidebar-collapsed .nav-label,
+.sidebar-collapsed .user-email {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar-brand {
+  justify-content: center;
+}
+
+.sidebar-collapsed .nav-item,
+.sidebar-collapsed .theme-toggle,
+.sidebar-collapsed .profile-trigger {
+  justify-content: center;
+}
+
+.sidebar-collapsed .profile-trigger-caret {
+  display: none;
+}
+
+.sidebar-collapsed .profile-dropdown {
+  left: 100%;
+  top: 0;
+  margin-left: 8px;
+  width: 220px;
+}
+
+/* ---------- Mobile (drawer) ---------- */
+.mobile-overlay {
+  display: none;
+}
+
 @media (max-width: 880px) {
   .app-sidebar {
-    width: 76px;
-    padding: 16px 8px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 264px;
+    padding: 20px 14px;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    z-index: 60;
   }
-  .sidebar-title,
-  .profile-trigger span:nth-child(2),
-  .profile-trigger-caret,
-  .nav-item span:last-child,
-  .theme-toggle span:last-child,
-  .user-email {
+
+  .sidebar-collapsed .app-sidebar {
+    width: 264px;
+    padding: 20px 14px;
+  }
+
+  .sidebar-collapsed .sidebar-title,
+  .sidebar-collapsed .nav-label,
+  .sidebar-collapsed .user-email {
+    display: inline;
+  }
+
+  .sidebar-collapsed .sidebar-brand,
+  .sidebar-collapsed .nav-item,
+  .sidebar-collapsed .theme-toggle,
+  .sidebar-collapsed .profile-trigger {
+    justify-content: flex-start;
+  }
+
+  .sidebar-mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-collapse-btn {
+    display: none !important;
+  }
+
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .app-topbar {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .context-label {
     display: none;
   }
-  .nav-item, .theme-toggle {
-    justify-content: center;
+
+  .context-label-short {
+    display: inline;
   }
-  .profile-trigger {
-    justify-content: center;
+
+  .topbar-new-btn-label {
+    display: none;
   }
+
+  .topbar-new-btn {
+    padding: 8px 11px;
+  }
+
   .app-content {
-    padding: 18px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .context-type {
+    display: none;
   }
 }
