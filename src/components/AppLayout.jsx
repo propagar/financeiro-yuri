@@ -8,7 +8,6 @@ import './AppLayout.css'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Painel', icon: '📊', end: true },
-  { to: '/recorrencias', label: 'Recorrências', icon: '🔁' },
   { to: '/contas', label: 'Contas', icon: '🏦' },
   { to: '/categorias', label: 'Categorias', icon: '🏷️' },
   { to: '/perfis', label: 'Perfis e acessos', icon: '👥' },

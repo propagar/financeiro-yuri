@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -11,9 +12,15 @@ import './Dashboard.css'
 export default function Dashboard() {
   const [range, setRange] = useState(currentMonthRange())
   const { transactions, loading } = useTransactions(range)
-  const { isConsolidated } = useProfiles()
+  const { isConsolidated, profiles, selectProfile } = useProfiles()
+  const navigate = useNavigate()
 
   const summary = useMemo(() => summarize(transactions), [transactions])
+
+  const goToFluxo = (profileId) => {
+    selectProfile(profileId)
+    navigate('/lancamentos')
+  }
 
   return (
     <div className="dashboard">
@@ -26,6 +33,13 @@ export default function Dashboard() {
         </div>
         <MonthPicker range={range} onChange={setRange} />
       </div>
+
+      <ShortcutsBar
+        profiles={profiles}
+        isConsolidated={isConsolidated}
+        onGoToFluxo={goToFluxo}
+        onGoToRecorrencias={() => navigate('/recorrencias')}
+      />
 
       <div className="summary-grid">
         <SummaryCard label="Receitas no período" value={summary.income} tone="income" />
@@ -57,6 +71,37 @@ export default function Dashboard() {
           <RecentList transactions={transactions.slice(0, 8)} loading={loading} />
         </div>
       </div>
+    </div>
+  )
+}
+
+function ShortcutsBar({ profiles, isConsolidated, onGoToFluxo, onGoToRecorrencias }) {
+  return (
+    <div className="shortcuts-bar">
+      <span className="shortcuts-label">Fluxo de caixa:</span>
+
+      <button
+        className={'shortcut-chip' + (isConsolidated ? ' shortcut-chip-active' : '')}
+        onClick={() => onGoToFluxo(null)}
+        type="button"
+      >
+        🌐 Geral
+      </button>
+
+      {profiles.map((p) => (
+        <button
+          key={p.id}
+          className="shortcut-chip"
+          onClick={() => onGoToFluxo(p.id)}
+          type="button"
+        >
+          {p.icon} {p.name}
+        </button>
+      ))}
+
+      <button className="shortcut-chip shortcut-chip-recurring" onClick={onGoToRecorrencias} type="button">
+        🔁 Recorrências
+      </button>
     </div>
   )
 }
