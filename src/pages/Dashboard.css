@@ -207,6 +207,48 @@
   color: var(--color-text);
 }
 
+.panel-wide {
+  grid-column: 1 / -1;
+}
+
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.panel-header-row h2 {
+  margin: 0;
+}
+
+.months-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--color-bg-sunken);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.months-toggle-btn {
+  background: none;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.months-toggle-btn-active {
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+}
+
 .recent-list {
   list-style: none;
   margin: 0;

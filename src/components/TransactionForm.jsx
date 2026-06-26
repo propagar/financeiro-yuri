@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useAccounts, useCategories } from '../hooks/useFinanceData'
+import { useAccounts, useCategories, flattenCategoriesForSelect } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
 import './TransactionForm.css'
 
@@ -33,6 +33,7 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
   const [error, setError] = useState('')
 
   const { categories } = useCategories(kind)
+  const categoryOptions = flattenCategoriesForSelect(categories)
   const { accounts } = useAccounts()
 
   const profileId = transaction?.profile_id || activeProfileId
@@ -153,8 +154,10 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
               Categoria
               <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 <option value="">Selecione…</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.depth > 0 ? `↳ ${c.icon} ${c.name}` : `${c.icon} ${c.name}`}
+                  </option>
                 ))}
               </select>
             </label>

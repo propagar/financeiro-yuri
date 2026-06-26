@@ -1,3 +1,10 @@
+.mercado-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .mercado-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

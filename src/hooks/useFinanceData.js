@@ -50,6 +50,68 @@ export function useTransactions({ from, to } = {}) {
   return { transactions, loading, error, reload }
 }
 
+/**
+ * Busca lançamentos dos últimos N meses (incluindo o mês atual) e agrega receita/despesa
+ * por mês, preenchendo com zero os meses sem nenhum lançamento — usado no gráfico de
+ * evolução mensal do Dashboard.
+ */
+export function useMonthlyEvolution(months = 6) {
+  const profileIds = useRelevantProfileIds()
+  const { version } = useTransactionModal()
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const reload = useCallback(async () => {
+    if (profileIds.length === 0) {
+      setData([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+
+    const now = new Date()
+    const rangeStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1)
+    const from = rangeStart.toISOString().slice(0, 10)
+
+    const { data: rows, error } = await supabase
+      .from('transactions')
+      .select('amount, kind, occurred_on')
+      .in('profile_id', profileIds)
+      .gte('occurred_on', from)
+
+    if (error) {
+      setData([])
+      setLoading(false)
+      return
+    }
+
+    // Monta os N meses do intervalo, todos zerados, na ordem cronológica
+    const buckets = new Map()
+    for (let i = 0; i < months; i++) {
+      const d = new Date(rangeStart.getFullYear(), rangeStart.getMonth() + i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      buckets.set(key, { monthKey: key, monthDate: d.toISOString().slice(0, 10), income: 0, expense: 0 })
+    }
+
+    for (const row of rows ?? []) {
+      const key = row.occurred_on.slice(0, 7)
+      const bucket = buckets.get(key)
+      if (!bucket) continue
+      if (row.kind === 'receita') bucket.income += Number(row.amount)
+      else bucket.expense += Number(row.amount)
+    }
+
+    setData([...buckets.values()])
+    setLoading(false)
+  }, [JSON.stringify(profileIds), months])
+
+  useEffect(() => {
+    reload()
+  }, [reload, version])
+
+  return { data, loading, reload }
+}
+
 export function useAccounts() {
   const profileIds = useRelevantProfileIds()
   const [accounts, setAccounts] = useState([])
@@ -140,6 +202,35 @@ export function useMercadoItemsByProfile(profileId, { from, to } = {}) {
   return { items, loading, reload }
 }
 
+/**
+ * Busca todos os itens de mercado já cadastrados para um perfil (sem filtro de período),
+ * usado para autocomplete de produto/categoria/unidade e para a comparação de preço
+ * com a média histórica ao cadastrar um novo item.
+ */
+export function useKnownMercadoProducts(profileId) {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!profileId) {
+      setItems([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    supabase
+      .from('mercado_items')
+      .select('product_name, brand, category, unit, quantity, final_price, unit_price, establishment')
+      .eq('profile_id', profileId)
+      .then(({ data }) => {
+        setItems(data ?? [])
+        setLoading(false)
+      })
+  }, [profileId])
+
+  return { items, loading }
+}
+
 export function useCategories(kind) {
   const profileIds = useRelevantProfileIds()
   const [categories, setCategories] = useState([])
@@ -171,4 +262,46 @@ export function useCategories(kind) {
   }, [reload])
 
   return { categories, loading, reload }
+}
+
+/**
+ * Organiza a lista flat de categorias em grupos hierárquicos: cada categoria-pai
+ * (parent_category_id == null) com suas subcategorias (parent_category_id == pai.id)
+ * aninhadas. Categorias órfãs (pai arquivado) caem como categoria de nível raiz.
+ */
+export function groupCategoriesByParent(categories) {
+  const byId = new Map(categories.map((c) => [c.id, c]))
+  const roots = []
+  const childrenMap = new Map()
+
+  for (const c of categories) {
+    if (c.parent_category_id && byId.has(c.parent_category_id)) {
+      const list = childrenMap.get(c.parent_category_id) || []
+      list.push(c)
+      childrenMap.set(c.parent_category_id, list)
+    } else {
+      roots.push(c)
+    }
+  }
+
+  return roots.map((parent) => ({
+    ...parent,
+    subcategories: (childrenMap.get(parent.id) || []).sort((a, b) => a.name.localeCompare(b.name)),
+  }))
+}
+
+/**
+ * Lista flat para uso em <select>, com indentação visual ("↳") para subcategorias,
+ * mantendo cada subcategoria logo após seu pai.
+ */
+export function flattenCategoriesForSelect(categories) {
+  const grouped = groupCategoriesByParent(categories)
+  const flat = []
+  for (const parent of grouped) {
+    flat.push({ ...parent, depth: 0 })
+    for (const child of parent.subcategories) {
+      flat.push({ ...child, depth: 1 })
+    }
+  }
+  return flat
 }

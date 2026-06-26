@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts'
-import { useTransactions } from '../hooks/useFinanceData'
+import { useTransactions, useMonthlyEvolution } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
-import { formatCurrency, formatDate, currentMonthRange } from '../lib/format'
+import { useTheme } from '../contexts/ThemeContext'
+import { formatCurrency, formatDate, formatMonthLabel, currentMonthRange } from '../lib/format'
 import DateRangeFilter from '../components/DateRangeFilter'
 import './Dashboard.css'
 
@@ -82,6 +83,10 @@ export default function Dashboard() {
       )}
 
       <div className="dashboard-grid">
+        <div className="panel panel-wide">
+          <MonthlyEvolutionPanel />
+        </div>
+
         <div className="panel">
           <h2>Despesas por categoria</h2>
           {summary.byCategory.length === 0 ? (
@@ -249,6 +254,80 @@ function ProfileBreakdown({ transactions }) {
         </button>
       ))}
     </div>
+  )
+}
+
+function MonthlyEvolutionPanel() {
+  const [monthsWindow, setMonthsWindow] = useState(6)
+  const { data, loading } = useMonthlyEvolution(monthsWindow)
+  const { theme } = useTheme()
+
+  // As cores precisam ser lidas do DOM (getComputedStyle), não passadas como string de
+  // CSS var direto no atributo fill do SVG — assim o gráfico acompanha o tema claro/escuro
+  // em tempo real, inclusive quando o usuário troca o tema sem recarregar a página.
+  const colors = useMemo(() => {
+    const styles = getComputedStyle(document.documentElement)
+    return {
+      income: styles.getPropertyValue('--color-income').trim() || '#1d7a4c',
+      expense: styles.getPropertyValue('--color-expense').trim() || '#a6432f',
+      grid: styles.getPropertyValue('--color-border').trim() || '#e2dccc',
+      text: styles.getPropertyValue('--color-text-muted').trim() || '#6b6253',
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme])
+
+  const chartData = data.map((d) => ({
+    ...d,
+    label: formatMonthLabel(d.monthDate),
+  }))
+
+  const hasAnyValue = data.some((d) => d.income > 0 || d.expense > 0)
+
+  return (
+    <>
+      <div className="panel-header-row">
+        <h2>Evolução mensal</h2>
+        <div className="months-toggle">
+          {[6, 12].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={'months-toggle-btn' + (monthsWindow === n ? ' months-toggle-btn-active' : '')}
+              onClick={() => setMonthsWindow(n)}
+            >
+              {n} meses
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <EmptyState loading />
+      ) : !hasAnyValue ? (
+        <EmptyState />
+      ) : (
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
+            <YAxis
+              tick={{ fill: colors.text, fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => formatCurrency(v).replace('R$', 'R$ ').replace(/,00$/, '')}
+              width={70}
+            />
+            <Tooltip formatter={(value) => formatCurrency(value)} />
+            <Legend
+              formatter={(value) => (value === 'income' ? 'Receita' : 'Despesa')}
+              wrapperStyle={{ fontSize: 12.5 }}
+            />
+            <Bar dataKey="income" name="income" fill={colors.income} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expense" name="expense" fill={colors.expense} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </>
   )
 }
 

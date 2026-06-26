@@ -3,6 +3,7 @@ import { useProfiles } from '../contexts/ProfileContext'
 import { useMercadoItemsByProfile } from '../hooks/useFinanceData'
 import { formatCurrency, formatDate, currentMonthRange } from '../lib/format'
 import DateRangeFilter from '../components/DateRangeFilter'
+import MercadoItemForm from '../components/MercadoItemForm'
 import './MercadoPage.css'
 
 export default function MercadoPage() {
@@ -10,18 +11,19 @@ export default function MercadoPage() {
   const [range, setRange] = useState(currentMonthRange())
   const [search, setSearch] = useState('')
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [showForm, setShowForm] = useState(false)
 
   // Mercado é uma visão exclusiva do perfil PF — não existe consolidado nem no PJ
   const pfProfile = profiles.find((p) => p.type === 'PF')
   const isPF = !isConsolidated && activeProfile?.type === 'PF'
 
-  const { items, loading } = useMercadoItemsByProfile(isPF ? activeProfile.id : null, range)
+  const { items, loading, reload } = useMercadoItemsByProfile(isPF ? activeProfile.id : null, range)
 
   const filteredItems = useMemo(() => {
     if (!search.trim()) return items
     const term = search.trim().toLowerCase()
     return items.filter((i) => {
-      const haystack = [i.product_name, i.product_category, i.establishment, i.brand]
+      const haystack = [i.product_name, i.category, i.establishment, i.brand]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -63,7 +65,12 @@ export default function MercadoPage() {
           <h1>Mercado</h1>
           <p className="dashboard-subtitle">Fluxo de caixa detalhado de compras de mercado — {activeProfile.name}</p>
         </div>
-        <DateRangeFilter range={range} onChange={setRange} />
+        <div className="mercado-header-actions">
+          <button className="btn-primary" onClick={() => setShowForm(true)} type="button">
+            + Novo item
+          </button>
+          <DateRangeFilter range={range} onChange={setRange} />
+        </div>
       </div>
 
       <div className="mercado-summary-grid">
@@ -139,6 +146,14 @@ export default function MercadoPage() {
       {selectedProduct && (
         <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
       )}
+
+      {showForm && (
+        <MercadoItemForm
+          profileId={activeProfile.id}
+          onClose={() => setShowForm(false)}
+          onSaved={() => { setShowForm(false); reload() }}
+        />
+      )}
     </div>
   )
 }
@@ -153,7 +168,7 @@ function groupByProduct(items) {
     if (!map.has(key)) {
       map.set(key, {
         name: item.product_name,
-        category: item.product_category,
+        category: item.category,
         unit: item.unit,
         purchases: [],
       })

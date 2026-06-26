@@ -1,0 +1,83 @@
+.mercado-form-autocomplete-wrap {
+  position: relative;
+}
+
+.mercado-form-suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.mercado-form-suggestions li button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.mercado-form-suggestions li button:hover {
+  background: var(--color-bg-sunken);
+}
+
+.mercado-form-suggestion-hint {
+  text-align: left;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--color-accent-strong);
+  cursor: pointer;
+  margin-top: -6px;
+}
+
+[data-theme='dark'] .mercado-form-suggestion-hint {
+  color: var(--color-accent);
+}
+
+.mercado-form-suggestion-hint:hover {
+  filter: brightness(1.05);
+}
+
+.mercado-price-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-top: -6px;
+}
+
+.mercado-price-alert-expense {
+  background: var(--color-expense-soft);
+  color: var(--color-expense);
+}
+
+.mercado-price-alert-income {
+  background: var(--color-income-soft);
+  color: var(--color-income);
+}
+
+.mercado-price-alert-neutral {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-muted);
+}
