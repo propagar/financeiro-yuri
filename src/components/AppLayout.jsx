@@ -12,6 +12,9 @@ const NAV_ITEMS = [
   { to: '/categorias', label: 'Categorias', icon: '🏷️' },
 ]
 
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
+const SHORTCUT_LABEL = IS_MAC ? '⌘N' : 'Ctrl+N'
+
 export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -41,12 +44,7 @@ export default function AppLayout() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key !== 'n' && e.key !== 'N') return
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-
-      const tag = document.activeElement?.tagName
-      const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
-        || document.activeElement?.isContentEditable
-      if (isEditable) return
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return
 
       e.preventDefault()
       openNew()
@@ -164,10 +162,10 @@ export default function AppLayout() {
             )}
           </div>
 
-          <button className="btn-primary topbar-new-btn" onClick={openNew} type="button" title="Atalho: tecla N">
+          <button className="btn-primary topbar-new-btn" onClick={openNew} type="button" title={`Atalho: ${SHORTCUT_LABEL}`}>
             <span className="topbar-new-btn-icon">+</span>
             <span className="topbar-new-btn-label">Novo lançamento</span>
-            <span className="topbar-new-btn-kbd" aria-hidden="true">N</span>
+            <span className="topbar-new-btn-kbd" aria-hidden="true">{SHORTCUT_LABEL}</span>
           </button>
         </header>
 
