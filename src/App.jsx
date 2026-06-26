@@ -12,6 +12,9 @@ import Recurrences from './pages/Recurrences'
 import Accounts from './pages/Accounts'
 import Categories from './pages/Categories'
 import ProfilesPage from './pages/ProfilesPage'
+import AccessesPage from './pages/AccessesPage'
+import SettingsPage from './pages/SettingsPage'
+import MercadoPage from './pages/MercadoPage'
 
 function GlobalTransactionModal() {
   const { open, transaction, close, notifySaved } = useTransactionModal()
@@ -60,6 +63,9 @@ export default function App() {
               <Route path="contas" element={<Accounts />} />
               <Route path="categorias" element={<Categories />} />
               <Route path="perfis" element={<ProfilesPage />} />
+              <Route path="acessos" element={<AccessesPage />} />
+              <Route path="configuracoes" element={<SettingsPage />} />
+              <Route path="mercado" element={<MercadoPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

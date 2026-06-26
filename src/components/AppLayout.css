@@ -57,23 +57,30 @@
 }
 
 .sidebar-collapse-btn {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
   display: none;
   align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-border-strong);
-  background: var(--color-bg-sunken);
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
+  text-align: left;
 }
 
 .sidebar-collapse-btn:hover {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-strong);
+  background: var(--color-bg-sunken);
+  color: var(--color-text);
+}
+
+.sidebar-collapse-btn span[aria-hidden] {
+  font-size: 13px;
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
 }
 
 /* Mostra o botão de recolher apenas em telas largas (desktop) */
@@ -286,6 +293,7 @@
   bottom: calc(100% + 6px);
   left: 0;
   right: 0;
+  min-width: 200px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -295,18 +303,42 @@
 
 .user-dropdown button {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 10px;
   background: none;
   border: none;
   text-align: left;
   font-size: 13px;
-  color: var(--color-expense);
+  color: var(--color-text);
   cursor: pointer;
   border-radius: var(--radius-sm);
 }
 
 .user-dropdown button:hover {
+  background: var(--color-bg-sunken);
+}
+
+.user-dropdown button.danger {
+  color: var(--color-expense);
+}
+
+.user-dropdown button.danger:hover {
   background: var(--color-expense-soft);
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 2px;
+}
+
+/* No mobile, com a sidebar mais larga, abre o dropdown para a direita do botão em vez de cobrir a tela */
+@media (max-width: 880px) {
+  .user-dropdown {
+    bottom: calc(100% + 6px);
+  }
 }
 
 /* ---------- Main ---------- */
@@ -431,7 +463,9 @@
 
 .sidebar-collapsed .nav-item,
 .sidebar-collapsed .theme-toggle,
-.sidebar-collapsed .profile-trigger {
+.sidebar-collapsed .profile-trigger,
+.sidebar-collapsed .sidebar-collapse-btn,
+.sidebar-collapsed .user-chip {
   justify-content: center;
 }
 

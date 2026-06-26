@@ -7,6 +7,7 @@ import {
 import { useTransactions } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
 import { formatCurrency, currentMonthRange, formatMonthLabel } from '../lib/format'
+import DateRangeFilter from '../components/DateRangeFilter'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -26,12 +27,12 @@ export default function Dashboard() {
     <div className="dashboard">
       <div className="dashboard-header">
         <div>
-          <h1>Painel</h1>
+          <h1>Dashboard</h1>
           <p className="dashboard-subtitle">
             {isConsolidated ? 'Consolidado de todos os perfis' : 'Resumo do perfil selecionado'}
           </p>
         </div>
-        <MonthPicker range={range} onChange={setRange} />
+        <DateRangeFilter range={range} onChange={setRange} />
       </div>
 
       <ShortcutsBar
@@ -39,6 +40,11 @@ export default function Dashboard() {
         isConsolidated={isConsolidated}
         onGoToFluxo={goToFluxo}
         onGoToRecorrencias={() => navigate('/recorrencias')}
+        onGoToMercado={() => {
+          const pf = profiles.find((p) => p.type === 'PF')
+          if (pf) selectProfile(pf.id)
+          navigate('/mercado')
+        }}
       />
 
       <div className="summary-grid">
@@ -75,7 +81,7 @@ export default function Dashboard() {
   )
 }
 
-function ShortcutsBar({ profiles, isConsolidated, onGoToFluxo, onGoToRecorrencias }) {
+function ShortcutsBar({ profiles, isConsolidated, onGoToFluxo, onGoToRecorrencias, onGoToMercado }) {
   return (
     <div className="shortcuts-bar">
       <span className="shortcuts-label">Fluxo de caixa:</span>
@@ -98,6 +104,10 @@ function ShortcutsBar({ profiles, isConsolidated, onGoToFluxo, onGoToRecorrencia
           {p.icon} {p.name}
         </button>
       ))}
+
+      <button className="shortcut-chip" onClick={onGoToMercado} type="button">
+        🛒 Mercado
+      </button>
 
       <button className="shortcut-chip shortcut-chip-recurring" onClick={onGoToRecorrencias} type="button">
         🔁 Recorrências
@@ -153,31 +163,6 @@ function SummaryCard({ label, value, tone, isCount }) {
       <span className={`summary-value summary-value-${tone}`}>
         {isCount ? value : formatCurrency(value)}
       </span>
-    </div>
-  )
-}
-
-function MonthPicker({ range, onChange }) {
-  const shift = (deltaMonths) => {
-    const base = new Date(range.from + 'T00:00:00')
-    const next = new Date(base.getFullYear(), base.getMonth() + deltaMonths, 1)
-    const to = new Date(next.getFullYear(), next.getMonth() + 1, 0)
-    onChange({
-      from: next.toISOString().slice(0, 10),
-      to: to.toISOString().slice(0, 10),
-    })
-  }
-
-  const label = new Date(range.from + 'T00:00:00').toLocaleDateString('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-  })
-
-  return (
-    <div className="month-picker">
-      <button onClick={() => shift(-1)} aria-label="Mês anterior" type="button">‹</button>
-      <span>{label}</span>
-      <button onClick={() => shift(1)} aria-label="Próximo mês" type="button">›</button>
     </div>
   )
 }

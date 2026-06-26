@@ -103,6 +103,43 @@ export function useMercadoItems(transactionId) {
   return { items, loading }
 }
 
+/**
+ * Busca todos os itens de mercado de um perfil específico (não consolidado — Mercado é PF apenas),
+ * com filtro de período opcional, para a página de Fluxo de Caixa de Mercado.
+ */
+export function useMercadoItemsByProfile(profileId, { from, to } = {}) {
+  const { version } = useTransactionModal()
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const reload = useCallback(async () => {
+    if (!profileId) {
+      setItems([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    let query = supabase
+      .from('mercado_items')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('purchased_on', { ascending: false })
+
+    if (from) query = query.gte('purchased_on', from)
+    if (to) query = query.lte('purchased_on', to)
+
+    const { data } = await query
+    setItems(data ?? [])
+    setLoading(false)
+  }, [profileId, from, to])
+
+  useEffect(() => {
+    reload()
+  }, [reload, version])
+
+  return { items, loading, reload }
+}
+
 export function useCategories(kind) {
   const profileIds = useRelevantProfileIds()
   const [categories, setCategories] = useState([])

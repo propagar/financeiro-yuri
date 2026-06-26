@@ -1,0 +1,202 @@
+.mercado-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.mercado-search-row {
+  margin-bottom: 16px;
+}
+
+.mercado-search {
+  width: 100%;
+  max-width: 420px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  font-size: 13.5px;
+}
+
+.mercado-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.mercado-product-card {
+  text-align: left;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mercado-product-card:hover {
+  border-color: var(--color-accent);
+}
+
+.mercado-product-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mercado-product-name {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--color-text);
+}
+
+.mercado-product-category {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .mercado-product-category {
+  color: var(--color-accent);
+}
+
+.mercado-product-prices {
+  display: flex;
+  gap: 18px;
+}
+
+.mercado-price-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mercado-price-label {
+  font-size: 10.5px;
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.mercado-price-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.mercado-price-best {
+  color: var(--color-income);
+}
+
+.mercado-product-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+.mercado-product-footer strong {
+  color: var(--color-text);
+}
+
+/* ---------- Modal de detalhe ---------- */
+.mercado-detail-card {
+  max-width: 520px;
+}
+
+.mercado-detail-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.mercado-detail-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mercado-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.mercado-history-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 70px 80px;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 6px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12.5px;
+}
+
+.mercado-history-row:last-child {
+  border-bottom: none;
+}
+
+.mercado-history-date {
+  color: var(--color-text-faint);
+}
+
+.mercado-history-establishment {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mercado-history-qty {
+  color: var(--color-text-muted);
+  font-size: 11.5px;
+}
+
+.mercado-history-price {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .mercado-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .mercado-products-grid {
+    grid-template-columns: 1fr;
+  }
+  .mercado-detail-stats {
+    grid-template-columns: 1fr;
+  }
+  .mercado-history-row {
+    grid-template-columns: 60px 1fr 60px;
+  }
+  .mercado-history-qty {
+    display: none;
+  }
+}

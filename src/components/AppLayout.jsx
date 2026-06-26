@@ -7,10 +7,9 @@ import { useState, useEffect } from 'react'
 import './AppLayout.css'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Painel', icon: '📊', end: true },
+  { to: '/', label: 'Dashboard', icon: '📊', end: true },
   { to: '/contas', label: 'Contas', icon: '🏦' },
   { to: '/categorias', label: 'Categorias', icon: '🏷️' },
-  { to: '/perfis', label: 'Perfis e acessos', icon: '👥' },
 ]
 
 export default function AppLayout() {
@@ -46,15 +45,6 @@ export default function AppLayout() {
           <div className="sidebar-brand">
             <span className="sidebar-mark">＄</span>
             <span className="sidebar-title">Financeiro</span>
-            <button
-              className="sidebar-collapse-btn"
-              onClick={() => setSidebarCollapsed((v) => !v)}
-              type="button"
-              title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-              aria-label={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-            >
-              {sidebarCollapsed ? '»' : '«'}
-            </button>
           </div>
 
           <ProfileSwitcher
@@ -93,10 +83,33 @@ export default function AppLayout() {
             </button>
             {menuOpen && (
               <div className="user-dropdown">
-                <button onClick={handleSignOut} type="button">Sair</button>
+                <button onClick={() => { setMenuOpen(false); navigate('/perfis') }} type="button">
+                  <span aria-hidden="true">👥</span> Perfis
+                </button>
+                <button onClick={() => { setMenuOpen(false); navigate('/acessos') }} type="button">
+                  <span aria-hidden="true">🔐</span> Acessos
+                </button>
+                <button onClick={() => { setMenuOpen(false); navigate('/configuracoes') }} type="button">
+                  <span aria-hidden="true">⚙️</span> Configurações
+                </button>
+                <div className="user-dropdown-divider" />
+                <button onClick={handleSignOut} type="button" className="danger">
+                  <span aria-hidden="true">🚪</span> Sair
+                </button>
               </div>
             )}
           </div>
+
+          <button
+            className="sidebar-collapse-btn"
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            type="button"
+            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-label={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            <span aria-hidden="true">{sidebarCollapsed ? '»' : '«'}</span>
+            <span className="nav-label">Recolher menu</span>
+          </button>
         </div>
       </aside>
 
