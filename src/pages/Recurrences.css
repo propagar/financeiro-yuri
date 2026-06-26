@@ -104,7 +104,8 @@
   }
   .recurrence-actions {
     order: 4;
-    width: 100%;
+    width: calc(100% - 46px);
     margin-left: 46px;
+    flex-wrap: wrap;
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * Menu de contexto genérico (clique direito).
@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
  */
 export default function ContextMenu({ x, y, items, onClose }) {
   const ref = useRef(null)
+  const [style, setStyle] = useState({ top: y, left: x, visibility: 'hidden' })
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -22,11 +23,23 @@ export default function ContextMenu({ x, y, items, onClose }) {
     }
   }, [onClose])
 
-  // Evita o menu nascer fora da tela quando o clique é próximo da borda
-  const style = {
-    top: y,
-    left: x,
-  }
+  // Reposiciona o menu se ele nasceria fora da viewport (comum perto das bordas em mobile)
+  useEffect(() => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const margin = 8
+    let nextLeft = x
+    let nextTop = y
+
+    if (x + rect.width > window.innerWidth - margin) {
+      nextLeft = Math.max(margin, window.innerWidth - rect.width - margin)
+    }
+    if (y + rect.height > window.innerHeight - margin) {
+      nextTop = Math.max(margin, window.innerHeight - rect.height - margin)
+    }
+
+    setStyle({ top: nextTop, left: nextLeft, visibility: 'visible' })
+  }, [x, y])
 
   return (
     <div className="context-menu" style={style} ref={ref}>

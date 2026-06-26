@@ -22,10 +22,17 @@
   gap: 8px;
 }
 
+.account-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .account-card-top h3 {
   margin: 0 0 2px;
   font-size: 14.5px;
   font-weight: 600;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .account-bank {

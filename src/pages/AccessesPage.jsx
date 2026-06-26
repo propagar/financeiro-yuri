@@ -25,7 +25,7 @@ export default function AccessesPage() {
           <div className="profile-row" key={p.id} style={{ borderLeftColor: p.color }}>
             <div className="profile-row-main">
               <span className="profile-row-icon">{p.icon}</span>
-              <div>
+              <div className="profile-row-info">
                 <h3>{p.name}</h3>
                 <span className="profile-row-meta">
                   <span className="profile-row-type">{p.type === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}</span>

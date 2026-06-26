@@ -52,7 +52,7 @@ export default function Accounts() {
           {accounts.map((a) => (
             <div className="account-card" key={a.id}>
               <div className="account-card-top">
-                <div>
+                <div className="account-card-info">
                   <h3>{a.name}</h3>
                   {a.bank && <span className="account-bank">{a.bank}</span>}
                 </div>

@@ -20,7 +20,13 @@ export default function MercadoPage() {
   const filteredItems = useMemo(() => {
     if (!search.trim()) return items
     const term = search.trim().toLowerCase()
-    return items.filter((i) => i.product_name?.toLowerCase().includes(term))
+    return items.filter((i) => {
+      const haystack = [i.product_name, i.product_category, i.establishment, i.brand]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(term)
+    })
   }, [items, search])
 
   const products = useMemo(() => groupByProduct(filteredItems), [filteredItems])
@@ -78,7 +84,7 @@ export default function MercadoPage() {
       <div className="mercado-search-row">
         <input
           className="mercado-search"
-          placeholder="🔍 Buscar produto (ex: leite, tomate, papel higiênico)…"
+          placeholder="🔍 Buscar produto, categoria ou estabelecimento (ex: leite, hortifruti, Kern)…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -88,9 +94,15 @@ export default function MercadoPage() {
         <div className="empty-state">Carregando…</div>
       ) : products.length === 0 ? (
         <div className="empty-state">
-          Nenhum item de mercado encontrado neste período.
-          Itens aparecem aqui quando você registra uma compra de Mercado, Fruteira ou Farmácia
-          com produtos detalhados.
+          {search ? (
+            `Nenhum resultado para "${search}" neste período.`
+          ) : (
+            <>
+              Nenhum item de mercado encontrado neste período.
+              Itens aparecem aqui quando você registra uma compra de Mercado, Fruteira ou Farmácia
+              com produtos detalhados.
+            </>
+          )}
         </div>
       ) : (
         <div className="mercado-products-grid">

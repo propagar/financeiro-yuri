@@ -12,13 +12,36 @@ export default function Transactions() {
   const { activeProfile, isConsolidated } = useProfiles()
   const { openEdit, openDuplicate } = useTransactionModal()
   const [filterKind, setFilterKind] = useState('todos')
+  const [search, setSearch] = useState('')
   const [viewingItems, setViewingItems] = useState(null)
   const [contextMenu, setContextMenu] = useState(null) // { x, y, transaction }
 
   const filtered = useMemo(() => {
-    if (filterKind === 'todos') return transactions
-    return transactions.filter((t) => t.kind === filterKind)
-  }, [transactions, filterKind])
+    let result = transactions
+    if (filterKind !== 'todos') {
+      result = result.filter((t) => t.kind === filterKind)
+    }
+    if (search.trim()) {
+      const term = search.trim().toLowerCase()
+      result = result.filter((t) => {
+        const haystack = [
+          t.name,
+          t.categories?.name,
+          t.accounts?.name,
+          t.establishment,
+          t.notes,
+          t.payment_method,
+          t.status,
+          t.profiles?.name,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return haystack.includes(term)
+      })
+    }
+    return result
+  }, [transactions, filterKind, search])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Excluir este lançamento?')) return
@@ -63,12 +86,28 @@ export default function Transactions() {
         ))}
       </div>
 
+      <div className="search-row">
+        <input
+          className="search-input"
+          placeholder="🔍 Buscar por descrição, categoria, conta, estabelecimento…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && (
+          <button className="search-clear" onClick={() => setSearch('')} type="button" aria-label="Limpar busca">
+            ✕
+          </button>
+        )}
+      </div>
+
       {/* Tabela (desktop) */}
       <div className="transactions-table-wrap">
         {loading ? (
           <div className="empty-state">Carregando…</div>
         ) : filtered.length === 0 ? (
-          <div className="empty-state">Nenhum lançamento encontrado.</div>
+          <div className="empty-state">
+            {search ? `Nenhum resultado para "${search}".` : 'Nenhum lançamento encontrado.'}
+          </div>
         ) : (
           <table className="transactions-table">
             <thead>
@@ -137,7 +176,9 @@ export default function Transactions() {
         {loading ? (
           <div className="empty-state">Carregando…</div>
         ) : filtered.length === 0 ? (
-          <div className="empty-state">Nenhum lançamento encontrado.</div>
+          <div className="empty-state">
+            {search ? `Nenhum resultado para "${search}".` : 'Nenhum lançamento encontrado.'}
+          </div>
         ) : (
           filtered.map((t) => (
             <div
@@ -146,7 +187,7 @@ export default function Transactions() {
               onContextMenu={(e) => handleContextMenu(e, t)}
             >
               <div className="transaction-card-top">
-                <div>
+                <div className="transaction-card-info">
                   <div className="transaction-card-name">
                     {t.recurrence_id && <span className="recurring-icon">🔁</span>}
                     {t.name}

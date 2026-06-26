@@ -25,6 +25,8 @@
   font-family: var(--font-display);
   font-size: 19px;
   margin: 0 0 4px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .modal-context {
