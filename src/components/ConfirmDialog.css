@@ -1,0 +1,46 @@
+.confirm-dialog-card {
+  max-width: 400px;
+}
+
+.confirm-preview-box {
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.confirm-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.confirm-preview-label {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.confirm-preview-value {
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.confirm-preview-income { color: var(--color-income); }
+.confirm-preview-expense { color: var(--color-expense); }
+
+.btn-danger {
+  background: var(--color-expense) !important;
+  border-color: var(--color-expense) !important;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+}

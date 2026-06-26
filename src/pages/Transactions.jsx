@@ -4,6 +4,7 @@ import { useTransactions, useMercadoItems } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
 import { useTransactionModal } from '../contexts/TransactionModalContext'
 import ContextMenu from '../components/ContextMenu'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { formatCurrency, formatDate } from '../lib/format'
 import './Transactions.css'
 
@@ -15,6 +16,7 @@ export default function Transactions() {
   const [search, setSearch] = useState('')
   const [viewingItems, setViewingItems] = useState(null)
   const [contextMenu, setContextMenu] = useState(null) // { x, y, transaction }
+  const [deleting, setDeleting] = useState(null) // transação a confirmar exclusão
 
   const filtered = useMemo(() => {
     let result = transactions
@@ -43,9 +45,10 @@ export default function Transactions() {
     return result
   }, [transactions, filterKind, search])
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Excluir este lançamento?')) return
-    await supabase.from('transactions').delete().eq('id', id)
+  const handleDeleteConfirmed = async () => {
+    if (!deleting) return
+    await supabase.from('transactions').delete().eq('id', deleting.id)
+    setDeleting(null)
     reload()
   }
 
@@ -58,7 +61,7 @@ export default function Transactions() {
     ? [
         { label: 'Editar', icon: '✏️', onClick: () => openEdit(contextMenu.transaction) },
         { label: 'Duplicar', icon: '📑', onClick: () => openDuplicate(contextMenu.transaction) },
-        { label: 'Excluir', icon: '🗑️', danger: true, onClick: () => handleDelete(contextMenu.transaction.id) },
+        { label: 'Excluir', icon: '🗑️', danger: true, onClick: () => setDeleting(contextMenu.transaction) },
       ]
     : []
 
@@ -162,7 +165,7 @@ export default function Transactions() {
                   <td className="col-actions">
                     <button onClick={() => openEdit(t)} type="button" title="Editar">✏️</button>
                     <button onClick={() => openDuplicate(t)} type="button" title="Duplicar">📑</button>
-                    <button onClick={() => handleDelete(t.id)} type="button" title="Excluir">🗑️</button>
+                    <button onClick={() => setDeleting(t)} type="button" title="Excluir">🗑️</button>
                   </td>
                 </tr>
               ))}
@@ -217,7 +220,7 @@ export default function Transactions() {
               <div className="transaction-card-footer">
                 <button onClick={() => openEdit(t)} type="button" title="Editar">✏️</button>
                 <button onClick={() => openDuplicate(t)} type="button" title="Duplicar">📑</button>
-                <button onClick={() => handleDelete(t.id)} type="button" title="Excluir">🗑️</button>
+                <button onClick={() => setDeleting(t)} type="button" title="Excluir">🗑️</button>
               </div>
             </div>
           ))
@@ -237,6 +240,24 @@ export default function Transactions() {
         <MercadoItemsModal
           transaction={viewingItems}
           onClose={() => setViewingItems(null)}
+        />
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title="Excluir lançamento?"
+          message="Essa ação não pode ser desfeita."
+          preview={[
+            { label: 'Descrição', value: deleting.name },
+            { label: 'Data', value: formatDate(deleting.occurred_on) },
+            {
+              label: 'Valor',
+              value: (deleting.kind === 'receita' ? '+' : '-') + formatCurrency(deleting.amount),
+              tone: deleting.kind === 'receita' ? 'income' : 'expense',
+            },
+          ]}
+          onConfirm={handleDeleteConfirmed}
+          onCancel={() => setDeleting(null)}
         />
       )}
     </div>

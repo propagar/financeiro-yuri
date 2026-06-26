@@ -36,6 +36,26 @@ export default function AppLayout() {
     return () => window.removeEventListener('popstate', close)
   }, [])
 
+  // Atalho de teclado: tecla "N" abre o modal de novo lançamento, exceto quando
+  // o foco está em um campo de texto/input (para não interferir na digitação)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'n' && e.key !== 'N') return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      const tag = document.activeElement?.tagName
+      const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+        || document.activeElement?.isContentEditable
+      if (isEditable) return
+
+      e.preventDefault()
+      openNew()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [openNew])
+
   return (
     <div className={'app-shell' + (sidebarCollapsed ? ' sidebar-collapsed' : '')}>
       {mobileOpen && <div className="mobile-overlay" onClick={() => setMobileOpen(false)} />}
@@ -144,9 +164,10 @@ export default function AppLayout() {
             )}
           </div>
 
-          <button className="btn-primary topbar-new-btn" onClick={openNew} type="button">
+          <button className="btn-primary topbar-new-btn" onClick={openNew} type="button" title="Atalho: tecla N">
             <span className="topbar-new-btn-icon">+</span>
             <span className="topbar-new-btn-label">Novo lançamento</span>
+            <span className="topbar-new-btn-kbd" aria-hidden="true">N</span>
           </button>
         </header>
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAccounts } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { formatCurrency } from '../lib/format'
 import './Accounts.css'
 
@@ -13,13 +14,15 @@ export default function Accounts() {
   const { activeProfileId, activeProfile, isConsolidated } = useProfiles()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [archiving, setArchiving] = useState(null)
 
   const openNew = () => { setEditing(null); setShowForm(true) }
   const openEdit = (a) => { setEditing(a); setShowForm(true) }
 
-  const handleArchive = async (id) => {
-    if (!window.confirm('Arquivar esta conta? Lançamentos antigos não serão afetados.')) return
-    await supabase.from('accounts').update({ is_active: false }).eq('id', id)
+  const handleArchiveConfirmed = async () => {
+    if (!archiving) return
+    await supabase.from('accounts').update({ is_active: false }).eq('id', archiving.id)
+    setArchiving(null)
     reload()
   }
 
@@ -90,7 +93,7 @@ export default function Accounts() {
 
               <div className="account-card-footer">
                 <button onClick={() => openEdit(a)} type="button">Editar</button>
-                <button onClick={() => handleArchive(a.id)} type="button" className="danger">Arquivar</button>
+                <button onClick={() => setArchiving(a)} type="button" className="danger">Arquivar</button>
               </div>
             </div>
           ))}
@@ -103,6 +106,20 @@ export default function Accounts() {
           profileId={activeProfileId}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); reload() }}
+        />
+      )}
+
+      {archiving && (
+        <ConfirmDialog
+          title="Arquivar conta?"
+          message="Lançamentos antigos não serão afetados, mas a conta deixará de aparecer no seletor."
+          confirmLabel="Arquivar"
+          preview={[
+            { label: 'Conta', value: archiving.name },
+            { label: 'Saldo atual', value: formatCurrency(archiving.current_balance) },
+          ]}
+          onConfirm={handleArchiveConfirmed}
+          onCancel={() => setArchiving(null)}
         />
       )}
     </div>

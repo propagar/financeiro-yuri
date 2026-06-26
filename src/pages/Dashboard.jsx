@@ -6,17 +6,20 @@ import {
 } from 'recharts'
 import { useTransactions } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
-import { formatCurrency, currentMonthRange, formatMonthLabel } from '../lib/format'
+import { formatCurrency, formatDate, currentMonthRange } from '../lib/format'
 import DateRangeFilter from '../components/DateRangeFilter'
 import './Dashboard.css'
 
 export default function Dashboard() {
   const [range, setRange] = useState(currentMonthRange())
   const { transactions, loading } = useTransactions(range)
+  const previousRange = useMemo(() => getPreviousEquivalentRange(range), [range])
+  const { transactions: previousTransactions } = useTransactions(previousRange)
   const { isConsolidated, profiles, selectProfile } = useProfiles()
   const navigate = useNavigate()
 
   const summary = useMemo(() => summarize(transactions), [transactions])
+  const previousSummary = useMemo(() => summarize(previousTransactions), [previousTransactions])
 
   const goToFluxo = (profileId) => {
     selectProfile(profileId)
@@ -48,15 +51,31 @@ export default function Dashboard() {
       />
 
       <div className="summary-grid">
-        <SummaryCard label="Receitas no período" value={summary.income} tone="income" />
-        <SummaryCard label="Despesas no período" value={summary.expense} tone="expense" />
+        <SummaryCard
+          label="Receitas no período"
+          value={summary.income}
+          tone="income"
+          delta={calcDelta(summary.income, previousSummary.income)}
+        />
+        <SummaryCard
+          label="Despesas no período"
+          value={summary.expense}
+          tone="expense"
+          delta={calcDelta(summary.expense, previousSummary.expense)}
+          deltaInverted
+        />
         <SummaryCard
           label="Saldo do período"
           value={summary.income - summary.expense}
           tone={summary.income - summary.expense >= 0 ? 'income' : 'expense'}
+          delta={calcDelta(summary.income - summary.expense, previousSummary.income - previousSummary.expense)}
         />
         <SummaryCard label="Lançamentos" value={transactions.length} tone="neutral" isCount />
       </div>
+
+      <p className="comparison-hint">
+        Comparado ao período anterior equivalente ({formatDate(previousRange.from)} – {formatDate(previousRange.to)})
+      </p>
 
       {isConsolidated && (
         <ProfileBreakdown transactions={transactions} />
@@ -116,6 +135,30 @@ function ShortcutsBar({ profiles, isConsolidated, onGoToFluxo, onGoToRecorrencia
   )
 }
 
+/**
+ * Calcula o período imediatamente anterior, com a mesma duração em dias do período
+ * atual — funciona genericamente para qualquer intervalo (mês, semana, customizado).
+ */
+function getPreviousEquivalentRange(range) {
+  const from = new Date(range.from + 'T00:00:00')
+  const to = new Date(range.to + 'T00:00:00')
+  const durationMs = to.getTime() - from.getTime()
+
+  const prevTo = new Date(from)
+  prevTo.setDate(prevTo.getDate() - 1)
+  const prevFrom = new Date(prevTo.getTime() - durationMs)
+
+  return {
+    from: prevFrom.toISOString().slice(0, 10),
+    to: prevTo.toISOString().slice(0, 10),
+  }
+}
+
+function calcDelta(current, previous) {
+  if (!previous) return null
+  return ((current - previous) / Math.abs(previous)) * 100
+}
+
 function summarize(transactions) {
   let income = 0
   let expense = 0
@@ -156,13 +199,22 @@ function summarize(transactions) {
   }
 }
 
-function SummaryCard({ label, value, tone, isCount }) {
+function SummaryCard({ label, value, tone, isCount, delta, deltaInverted }) {
+  const showDelta = typeof delta === 'number' && Number.isFinite(delta) && !isCount
+  const isPositive = deltaInverted ? delta < 0 : delta > 0
+  const deltaTone = delta === 0 ? 'neutral' : isPositive ? 'income' : 'expense'
+
   return (
     <div className="summary-card">
       <span className="summary-label">{label}</span>
       <span className={`summary-value summary-value-${tone}`}>
         {isCount ? value : formatCurrency(value)}
       </span>
+      {showDelta && (
+        <span className={`summary-delta summary-delta-${deltaTone}`}>
+          {delta > 0 ? '▲' : delta < 0 ? '▼' : '–'} {Math.abs(delta).toFixed(0)}%
+        </span>
+      )}
     </div>
   )
 }

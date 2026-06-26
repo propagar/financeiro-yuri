@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProfiles } from '../contexts/ProfileContext'
+import ConfirmDialog from '../components/ConfirmDialog'
 import './ProfilesPage.css'
 
 const PROFILE_COLORS = ['#6366f1', '#10b981', '#f97316', '#ec4899', '#0f5e56', '#a6432f', '#5b4ccb', '#b8862c']
@@ -10,13 +11,15 @@ export default function ProfilesPage() {
   const { profiles, reloadProfiles } = useProfiles()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [archiving, setArchiving] = useState(null)
 
   const openNew = () => { setEditing(null); setShowForm(true) }
   const openEdit = (p) => { setEditing(p); setShowForm(true) }
 
-  const handleArchive = async (id) => {
-    if (!window.confirm('Arquivar este perfil? Os dados não serão excluídos, mas o perfil deixará de aparecer no seletor.')) return
-    await supabase.from('profiles').update({ is_active: false }).eq('id', id)
+  const handleArchiveConfirmed = async () => {
+    if (!archiving) return
+    await supabase.from('profiles').update({ is_active: false }).eq('id', archiving.id)
+    setArchiving(null)
     reloadProfiles()
   }
 
@@ -45,7 +48,7 @@ export default function ProfilesPage() {
             </div>
             <div className="profile-row-actions">
               <button onClick={() => openEdit(p)} type="button">Editar</button>
-              <button onClick={() => handleArchive(p.id)} type="button" className="danger">Arquivar</button>
+              <button onClick={() => setArchiving(p)} type="button" className="danger">Arquivar</button>
             </div>
           </div>
         ))}
@@ -65,6 +68,20 @@ export default function ProfilesPage() {
           profile={editing}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); reloadProfiles() }}
+        />
+      )}
+
+      {archiving && (
+        <ConfirmDialog
+          title="Arquivar perfil?"
+          message="Os dados não serão excluídos, mas o perfil deixará de aparecer no seletor."
+          confirmLabel="Arquivar"
+          preview={[
+            { label: 'Perfil', value: `${archiving.icon} ${archiving.name}` },
+            { label: 'Tipo', value: archiving.type === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica' },
+          ]}
+          onConfirm={handleArchiveConfirmed}
+          onCancel={() => setArchiving(null)}
         />
       )}
     </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCategories } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
+import ConfirmDialog from '../components/ConfirmDialog'
 import './Categories.css'
 
 const EMOJI_SUGGESTIONS = ['📁', '🛒', '🍽️', '🚗', '🏥', '📚', '🏠', '🎉', '🐾', '🛠️', '📱', '💰', '📈', '🔧', '👕', '🧾', '📣', '👥', '📦', '⚽', '🏐', '🌱']
@@ -12,13 +13,15 @@ export default function Categories() {
   const { activeProfileId, activeProfile, isConsolidated } = useProfiles()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [archiving, setArchiving] = useState(null)
 
   const openNew = () => { setEditing(null); setShowForm(true) }
   const openEdit = (c) => { setEditing(c); setShowForm(true) }
 
-  const handleArchive = async (id) => {
-    if (!window.confirm('Arquivar esta categoria?')) return
-    await supabase.from('categories').update({ is_active: false }).eq('id', id)
+  const handleArchiveConfirmed = async () => {
+    if (!archiving) return
+    await supabase.from('categories').update({ is_active: false }).eq('id', archiving.id)
+    setArchiving(null)
     reload()
   }
 
@@ -70,7 +73,7 @@ export default function Categories() {
               )}
               <div className="category-chip-actions">
                 <button onClick={() => openEdit(c)} type="button" title="Editar">✏️</button>
-                <button onClick={() => handleArchive(c.id)} type="button" title="Arquivar">🗑️</button>
+                <button onClick={() => setArchiving(c)} type="button" title="Arquivar">🗑️</button>
               </div>
             </div>
           ))}
@@ -84,6 +87,19 @@ export default function Categories() {
           defaultKind={kindFilter}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); reload() }}
+        />
+      )}
+
+      {archiving && (
+        <ConfirmDialog
+          title="Arquivar categoria?"
+          message="Lançamentos antigos com essa categoria não serão afetados."
+          confirmLabel="Arquivar"
+          preview={[
+            { label: 'Categoria', value: `${archiving.icon} ${archiving.name}` },
+          ]}
+          onConfirm={handleArchiveConfirmed}
+          onCancel={() => setArchiving(null)}
         />
       )}
     </div>
