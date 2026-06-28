@@ -118,3 +118,59 @@ button.danger {
     grid-template-columns: 1fr;
   }
 }
+
+.settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.settings-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  padding: 16px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+
+.settings-tab span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-tab-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.settings-panel {
+  animation: settings-panel-in 140ms ease-out;
+}
+
+@keyframes settings-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .settings-tabs {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useProfiles } from '../contexts/ProfileContext'
@@ -10,6 +11,7 @@ const AVATAR_OPTIONS = ['🙂', '😎', '🧑‍💼', '👩‍💼', '🧔', '�
 
 export default function SettingsPage() {
   const { user } = useAuth()
+  const location = useLocation()
   const { profiles } = useProfiles()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -34,10 +36,17 @@ export default function SettingsPage() {
   const [resetting, setResetting] = useState(false)
   const [resetMessage, setResetMessage] = useState('')
   const [resetError, setResetError] = useState('')
+  const [activeTab, setActiveTab] = useState('perfil')
 
   useEffect(() => {
     loadProfile()
   }, [user?.id])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const section = params.get('secao')
+    if (section === 'acesso' || section === 'perfil') setActiveTab(section)
+  }, [location.search])
 
   const loadProfile = async () => {
     if (!user?.id) return
@@ -192,13 +201,39 @@ export default function SettingsPage() {
         <div>
           <h1>Configurações</h1>
 
-          <p className="dashboard-subtitle">Seus dados pessoais, preferências, perfis e acessos</p>
+          <p className="dashboard-subtitle">Gerencie seus dados pessoais, preferências, senha, segurança e permissões</p>
         </div>
       </div>
 
+      <div className="settings-tabs" role="tablist" aria-label="Seções de configurações">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'perfil'}
+          className={activeTab === 'perfil' ? 'settings-tab settings-tab-active' : 'settings-tab'}
+          onClick={() => setActiveTab('perfil')}
+        >
+          Perfil
+          <span>Gerencie seus dados pessoais e preferências</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'acesso'}
+          className={activeTab === 'acesso' ? 'settings-tab settings-tab-active' : 'settings-tab'}
+          onClick={() => setActiveTab('acesso')}
+        >
+          Acesso
+          <span>Gerencie sua senha, segurança e permissões</span>
+        </button>
+      </div>
+
+      {activeTab === 'perfil' && (
+      <div className="settings-panel" role="tabpanel" aria-label="Perfil">
       <div className="settings-grid">
         <form onSubmit={handleSaveProfile} className="settings-card transaction-form">
-          <h2>Dados pessoais</h2>
+          <h2>Perfil</h2>
+          <p className="settings-help">Gerencie seus dados pessoais e preferências.</p>
 
           <label>
             Avatar
@@ -262,20 +297,49 @@ export default function SettingsPage() {
         </form>
 
         <div className="settings-card settings-shortcuts">
-          <h2>Perfis e acessos</h2>
-          <p className="settings-help">Gerencie os perfis financeiros e as permissões de acesso diretamente pelas configurações.</p>
-          <div className="settings-shortcut-actions">
-            <button type="button" className="btn-secondary" onClick={() => setActiveTab('perfis')}>
-              <span aria-hidden="true">👥</span> Perfis
-            </button>
-            <button type="button" className="btn-secondary" onClick={() => setActiveTab('acessos')}>
-              <span aria-hidden="true">🔐</span> Acessos
-            </button>
-          </div>
+          <h2>Perfis financeiros</h2>
+          <p className="settings-help">Mantenha as entidades pessoais e empresariais usadas na navegação do sistema.</p>
         </div>
+      </div>
 
+      <section className="settings-section">
+        <ProfilesPage />
+      </section>
+
+      <section className="settings-section">
+        <form onSubmit={handleResetProfileData} className="settings-card transaction-form settings-reset-card">
+          <h2>Resetar dados de perfil</h2>
+          <p className="settings-help">Escolha o perfil e quais dados serão apagados. Ao resetar dados, as categorias do perfil também serão resetadas.</p>
+          <label>
+            Perfil
+            <select value={resetProfileId} onChange={(e) => setResetProfileId(e.target.value)}>
+              {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.icon} {profile.name} — {profile.type === 'PF' ? 'Pessoal' : 'Empresarial'}</option>)}
+            </select>
+          </label>
+          <div className="reset-options">
+            {resetChoices.map((choice) => (
+              <label key={choice.key} className="reset-option">
+                <input type="checkbox" checked={!!resetOptions[choice.key]} onChange={(e) => setResetOptions((current) => ({ ...current, [choice.key]: e.target.checked }))} />
+                <span>{choice.label}</span>
+              </label>
+            ))}
+          </div>
+          {resetError && <p className="login-error">{resetError}</p>}
+          {resetMessage && <p className="login-info">{resetMessage}</p>}
+          <div className="modal-actions">
+            <button type="submit" className="btn-secondary danger" disabled={resetting}>{resetting ? 'Resetando…' : 'Resetar dados selecionados'}</button>
+          </div>
+        </form>
+      </section>
+      </div>
+      )}
+
+      {activeTab === 'acesso' && (
+      <div className="settings-panel" role="tabpanel" aria-label="Acesso">
+      <div className="settings-grid">
         <form onSubmit={handleChangePassword} className="settings-card transaction-form">
-          <h2>Alterar senha</h2>
+          <h2>Acesso</h2>
+          <p className="settings-help">Gerencie sua senha, segurança e permissões.</p>
 
           <label>
             Nova senha
@@ -311,38 +375,10 @@ export default function SettingsPage() {
       </div>
 
       <section className="settings-section">
-        <ProfilesPage />
-      </section>
-
-      <section className="settings-section">
         <AccessesPage />
       </section>
-
-      <section className="settings-section">
-        <form onSubmit={handleResetProfileData} className="settings-card transaction-form settings-reset-card">
-          <h2>Resetar dados de perfil</h2>
-          <p className="settings-help">Escolha o perfil e quais dados serão apagados. Ao resetar dados, as categorias do perfil também serão resetadas.</p>
-          <label>
-            Perfil
-            <select value={resetProfileId} onChange={(e) => setResetProfileId(e.target.value)}>
-              {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.icon} {profile.name} — {profile.type === 'PF' ? 'Pessoal' : 'Empresarial'}</option>)}
-            </select>
-          </label>
-          <div className="reset-options">
-            {resetChoices.map((choice) => (
-              <label key={choice.key} className="reset-option">
-                <input type="checkbox" checked={!!resetOptions[choice.key]} onChange={(e) => setResetOptions((current) => ({ ...current, [choice.key]: e.target.checked }))} />
-                <span>{choice.label}</span>
-              </label>
-            ))}
-          </div>
-          {resetError && <p className="login-error">{resetError}</p>}
-          {resetMessage && <p className="login-info">{resetMessage}</p>}
-          <div className="modal-actions">
-            <button type="submit" className="btn-secondary danger" disabled={resetting}>{resetting ? 'Resetando…' : 'Resetar dados selecionados'}</button>
-          </div>
-        </form>
-      </section>
+      </div>
+      )}
 
     </div>
   )

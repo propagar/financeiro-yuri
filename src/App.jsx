@@ -61,8 +61,8 @@ export default function App() {
               <Route path="recorrencias" element={<Recurrences />} />
               <Route path="contas" element={<Accounts />} />
               <Route path="categorias" element={<Categories />} />
-              <Route path="perfis" element={<Navigate to="/configuracoes" replace />} />
-              <Route path="acessos" element={<Navigate to="/configuracoes" replace />} />
+              <Route path="perfis" element={<Navigate to="/configuracoes?secao=perfil" replace />} />
+              <Route path="acessos" element={<Navigate to="/configuracoes?secao=acesso" replace />} />
               <Route path="configuracoes" element={<SettingsPage />} />
               <Route path="mercado" element={<MercadoPage />} />
               <Route path="importar-lancamentos" element={<BulkImport />} />
