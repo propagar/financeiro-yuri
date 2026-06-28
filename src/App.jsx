@@ -11,8 +11,6 @@ import Transactions from './pages/Transactions'
 import Recurrences from './pages/Recurrences'
 import Accounts from './pages/Accounts'
 import Categories from './pages/Categories'
-import ProfilesPage from './pages/ProfilesPage'
-import AccessesPage from './pages/AccessesPage'
 import SettingsPage from './pages/SettingsPage'
 import MercadoPage from './pages/MercadoPage'
 import BulkImport from './pages/BulkImport'
@@ -63,8 +61,8 @@ export default function App() {
               <Route path="recorrencias" element={<Recurrences />} />
               <Route path="contas" element={<Accounts />} />
               <Route path="categorias" element={<Categories />} />
-              <Route path="perfis" element={<ProfilesPage />} />
-              <Route path="acessos" element={<AccessesPage />} />
+              <Route path="perfis" element={<Navigate to="/configuracoes" replace />} />
+              <Route path="acessos" element={<Navigate to="/configuracoes" replace />} />
               <Route path="configuracoes" element={<SettingsPage />} />
               <Route path="mercado" element={<MercadoPage />} />
               <Route path="importar-lancamentos" element={<BulkImport />} />

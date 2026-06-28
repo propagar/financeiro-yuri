@@ -52,3 +52,77 @@
     grid-template-columns: 1fr;
   }
 }
+
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.settings-tabs button {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.settings-tabs button:hover,
+.settings-tabs .settings-tab-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.settings-tabs .danger-tab.settings-tab-active {
+  border-color: var(--color-danger, #ef4444);
+  background: color-mix(in srgb, var(--color-danger, #ef4444) 14%, transparent);
+  color: var(--color-danger, #ef4444);
+}
+
+.form-row-three {
+  grid-template-columns: 1fr 90px 1fr;
+}
+
+.settings-reset-card {
+  max-width: 680px;
+}
+
+.settings-help {
+  color: var(--color-text-muted);
+  margin-top: 0;
+}
+
+.reset-options {
+  display: grid;
+  gap: 10px;
+  margin: 6px 0 10px;
+}
+
+.reset-option {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: var(--color-bg-sunken);
+}
+
+.reset-option input {
+  width: auto;
+}
+
+button.danger {
+  color: var(--color-danger, #ef4444);
+  border-color: color-mix(in srgb, var(--color-danger, #ef4444) 55%, var(--color-border));
+}
+
+@media (max-width: 760px) {
+  .form-row-three {
+    grid-template-columns: 1fr;
+  }
+}
