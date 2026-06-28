@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
   { to: '/contas', label: 'Contas', icon: '🏦' },
   { to: '/categorias', label: 'Categorias', icon: '🏷️' },
+  { to: '/importar-lancamentos', label: 'Importar extrato', icon: '📥' },
 ]
 
 
