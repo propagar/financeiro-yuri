@@ -85,12 +85,6 @@ export default function AppLayout() {
             </button>
             {menuOpen && (
               <div className="user-dropdown">
-                <button onClick={() => { setMenuOpen(false); navigate('/perfis') }} type="button">
-                  <span aria-hidden="true">👥</span> Perfis
-                </button>
-                <button onClick={() => { setMenuOpen(false); navigate('/acessos') }} type="button">
-                  <span aria-hidden="true">🔐</span> Acessos
-                </button>
                 <button onClick={() => { setMenuOpen(false); navigate('/configuracoes') }} type="button">
                   <span aria-hidden="true">⚙️</span> Configurações
                 </button>
