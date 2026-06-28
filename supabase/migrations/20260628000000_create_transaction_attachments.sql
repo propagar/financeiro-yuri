@@ -33,11 +33,32 @@ create table if not exists public.transaction_attachments (
   file_name text not null,
   content_type text,
   file_size bigint,
+  source_kind text not null default 'attachment',
+  extraction_status text not null default 'not_attempted',
+  extracted_text text,
+  extraction_message text,
   created_at timestamptz not null default now(),
   constraint transaction_attachments_storage_path_key unique (bucket_id, storage_path),
   constraint transaction_attachments_bucket_check check (bucket_id = 'financial-attachments'),
-  constraint transaction_attachments_file_size_check check (file_size is null or file_size >= 0)
+  constraint transaction_attachments_file_size_check check (file_size is null or file_size >= 0),
+  constraint transaction_attachments_source_kind_check check (source_kind in ('attachment', 'document_origin')),
+  constraint transaction_attachments_extraction_status_check check (extraction_status in ('not_attempted', 'extracted', 'empty', 'unsupported', 'failed'))
 );
+
+
+alter table public.transaction_attachments
+  add column if not exists source_kind text not null default 'attachment',
+  add column if not exists extraction_status text not null default 'not_attempted',
+  add column if not exists extracted_text text,
+  add column if not exists extraction_message text;
+
+alter table public.transaction_attachments
+  drop constraint if exists transaction_attachments_source_kind_check,
+  add constraint transaction_attachments_source_kind_check check (source_kind in ('attachment', 'document_origin'));
+
+alter table public.transaction_attachments
+  drop constraint if exists transaction_attachments_extraction_status_check,
+  add constraint transaction_attachments_extraction_status_check check (extraction_status in ('not_attempted', 'extracted', 'empty', 'unsupported', 'failed'));
 
 create index if not exists transaction_attachments_transaction_id_idx
   on public.transaction_attachments(transaction_id);

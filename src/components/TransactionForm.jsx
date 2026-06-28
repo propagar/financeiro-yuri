@@ -70,7 +70,7 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
   const { accounts } = useAccounts()
 
   const profileId = transaction?.profile_id || activeProfileId
-  const canAttachFiles = !isEdit && kind === 'despesa' && !isRecurring
+  const canAttachFiles = !isRecurring
   const attachmentSummary = useMemo(() => {
     if (attachments.length === 0) return 'Nenhum anexo selecionado'
     return `${attachments.length} anexo${attachments.length > 1 ? 's' : ''} selecionado${attachments.length > 1 ? 's' : ''}`
@@ -94,7 +94,7 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
   }
 
   const saveAttachments = async (transactionId) => {
-    if (!canAttachFiles || attachments.length === 0) return null
+    if (attachments.length === 0) return null
 
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError) return userError
@@ -127,6 +127,9 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
         file_name: file.name,
         content_type: file.type || null,
         file_size: file.size,
+        source_kind: 'document_origin',
+        extraction_status: file.type?.startsWith('image/') || file.type === 'application/pdf' ? 'not_attempted' : 'unsupported',
+        extraction_message: 'Anexo salvo para conferência documental e lançamento manual quando necessário.',
       })
     }
 
@@ -340,7 +343,7 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
                 <input type="file" accept={ATTACHMENT_ACCEPT} multiple onChange={handleAttachmentChange} />
               </label>
               <p className="attachments-hint">
-                Adicione imagens, PDFs ou CSVs. A leitura automática desses arquivos ainda não será feita.
+                Adicione imagens, PDFs ou CSVs como origem documental. Imagens ficam salvas sem OCR; PDFs podem ser importados pela tela de importação para tentativa de leitura básica.
               </p>
               <p className="attachments-summary">{attachmentSummary}</p>
               {attachments.length > 0 && (
