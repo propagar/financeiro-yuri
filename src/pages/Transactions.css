@@ -389,3 +389,123 @@
     align-items: flex-start;
   }
 }
+
+.import-open-button {
+  white-space: nowrap;
+}
+
+.import-modal {
+  width: min(980px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.import-hint {
+  margin: -4px 0 14px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.import-file-button {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0 10px;
+  padding: 8px 12px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: var(--color-bg-sunken);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.import-file-button input {
+  display: none;
+}
+
+.import-textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.import-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 14px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.import-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.import-preview-row {
+  display: grid;
+  grid-template-columns: 80px 142px minmax(180px, 1fr) 116px 120px auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+
+.import-preview-row input,
+.import-preview-row select {
+  min-width: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  padding: 8px;
+  font-size: 12.5px;
+}
+
+.import-check {
+  margin: 0;
+  font-size: 12px;
+}
+
+.import-preview-duplicate {
+  border-color: var(--color-pending);
+  background: var(--color-pending-soft);
+}
+
+.duplicate-pill {
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--color-pending);
+  background: var(--color-bg-elevated);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .import-preview-row {
+    grid-template-columns: 1fr;
+  }
+
+  .import-actions-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
