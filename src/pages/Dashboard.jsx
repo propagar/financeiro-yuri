@@ -36,7 +36,18 @@ export default function Dashboard() {
             {isConsolidated ? 'Consolidado de todos os perfis' : 'Resumo do perfil selecionado'}
           </p>
         </div>
-        <DateRangeFilter range={range} onChange={setRange} />
+        <div className="dashboard-header-actions">
+          {!isConsolidated && (
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => navigate('/importar-lancamentos')}
+            >
+              Importar documento
+            </button>
+          )}
+          <DateRangeFilter range={range} onChange={setRange} />
+        </div>
       </div>
 
       <ShortcutsBar
