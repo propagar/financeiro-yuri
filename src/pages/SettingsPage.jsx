@@ -11,7 +11,6 @@ const AVATAR_OPTIONS = ['🙂', '😎', '🧑‍💼', '👩‍💼', '🧔', '�
 export default function SettingsPage() {
   const { user } = useAuth()
   const { profiles } = useProfiles()
-  const [activeTab, setActiveTab] = useState('dados')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -186,24 +185,18 @@ export default function SettingsPage() {
   if (loading) {
     return <div className="empty-state">Carregando…</div>
   }
-
+  
   return (
     <div className="settings-page">
       <div className="page-header">
         <div>
           <h1>Configurações</h1>
+
           <p className="dashboard-subtitle">Seus dados pessoais, preferências, perfis e acessos</p>
         </div>
       </div>
 
-      <div className="settings-tabs" role="tablist" aria-label="Configurações">
-        <button type="button" className={activeTab === 'dados' ? 'settings-tab-active' : ''} onClick={() => setActiveTab('dados')}>Configurações</button>
-        <button type="button" className={activeTab === 'perfis' ? 'settings-tab-active' : ''} onClick={() => setActiveTab('perfis')}>Perfis</button>
-        <button type="button" className={activeTab === 'acessos' ? 'settings-tab-active' : ''} onClick={() => setActiveTab('acessos')}>Acessos</button>
-        <button type="button" className={activeTab === 'reset' ? 'settings-tab-active danger-tab' : ''} onClick={() => setActiveTab('reset')}>Resetar dados</button>
-      </div>
-
-      {activeTab === 'dados' && <div className="settings-grid">
+      <div className="settings-grid">
         <form onSubmit={handleSaveProfile} className="settings-card transaction-form">
           <h2>Dados pessoais</h2>
 
@@ -315,11 +308,17 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
-      </div>}
+      </div>
 
-      {activeTab === 'perfis' && <ProfilesPage />}
-      {activeTab === 'acessos' && <AccessesPage />}
-      {activeTab === 'reset' && (
+      <section className="settings-section">
+        <ProfilesPage />
+      </section>
+
+      <section className="settings-section">
+        <AccessesPage />
+      </section>
+
+      <section className="settings-section">
         <form onSubmit={handleResetProfileData} className="settings-card transaction-form settings-reset-card">
           <h2>Resetar dados de perfil</h2>
           <p className="settings-help">Escolha o perfil e quais dados serão apagados. Ao resetar dados, as categorias do perfil também serão resetadas.</p>
@@ -343,7 +342,7 @@ export default function SettingsPage() {
             <button type="submit" className="btn-secondary danger" disabled={resetting}>{resetting ? 'Resetando…' : 'Resetar dados selecionados'}</button>
           </div>
         </form>
-      )}
+      </section>
 
     </div>
   )
