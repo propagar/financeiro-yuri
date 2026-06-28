@@ -19,6 +19,24 @@
   margin: 0 0 6px;
 }
 
+.settings-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-shortcut-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-shortcut-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .avatar-picker {
   display: flex;
   flex-wrap: wrap;
