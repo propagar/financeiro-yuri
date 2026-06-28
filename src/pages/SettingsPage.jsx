@@ -192,7 +192,7 @@ export default function SettingsPage() {
       <div className="page-header">
         <div>
           <h1>Configurações</h1>
-          <p className="dashboard-subtitle">Seus dados pessoais e preferências de conta</p>
+          <p className="dashboard-subtitle">Seus dados pessoais, preferências, perfis e acessos</p>
         </div>
       </div>
 
@@ -267,6 +267,19 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+
+        <div className="settings-card settings-shortcuts">
+          <h2>Perfis e acessos</h2>
+          <p className="settings-help">Gerencie os perfis financeiros e as permissões de acesso diretamente pelas configurações.</p>
+          <div className="settings-shortcut-actions">
+            <button type="button" className="btn-secondary" onClick={() => setActiveTab('perfis')}>
+              <span aria-hidden="true">👥</span> Perfis
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => setActiveTab('acessos')}>
+              <span aria-hidden="true">🔐</span> Acessos
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleChangePassword} className="settings-card transaction-form">
           <h2>Alterar senha</h2>
