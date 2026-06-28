@@ -12,8 +12,6 @@ const NAV_ITEMS = [
   { to: '/categorias', label: 'Categorias', icon: '🏷️' },
 ]
 
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
-const SHORTCUT_LABEL = IS_MAC ? '⌘N' : 'Ctrl+N'
 
 export default function AppLayout() {
   const { user, signOut } = useAuth()
@@ -39,20 +37,6 @@ export default function AppLayout() {
     return () => window.removeEventListener('popstate', close)
   }, [])
 
-  // Atalho de teclado: tecla "N" abre o modal de novo lançamento, exceto quando
-  // o foco está em um campo de texto/input (para não interferir na digitação)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key !== 'n' && e.key !== 'N') return
-      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return
-
-      e.preventDefault()
-      openNew()
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [openNew])
 
   return (
     <div className={'app-shell' + (sidebarCollapsed ? ' sidebar-collapsed' : '')}>
@@ -162,10 +146,9 @@ export default function AppLayout() {
             )}
           </div>
 
-          <button className="btn-primary topbar-new-btn" onClick={openNew} type="button" title={`Atalho: ${SHORTCUT_LABEL}`}>
+          <button className="btn-primary topbar-new-btn" onClick={openNew} type="button">
             <span className="topbar-new-btn-icon">+</span>
             <span className="topbar-new-btn-label">Novo lançamento</span>
-            <span className="topbar-new-btn-kbd" aria-hidden="true">{SHORTCUT_LABEL}</span>
           </button>
         </header>
 
