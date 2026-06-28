@@ -1,19 +1,24 @@
 import { useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { useTransactions, useMercadoItems } from '../hooks/useFinanceData'
+import { useTransactions, useMercadoItems, useCategories } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
 import { useTransactionModal } from '../contexts/TransactionModalContext'
 import ContextMenu from '../components/ContextMenu'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { formatCurrency, formatDate } from '../lib/format'
+import { formatCurrency, formatDate, currentMonthRange } from '../lib/format'
 import { extractDocumentText } from '../lib/documentExtraction'
+import DateRangeFilter from '../components/DateRangeFilter'
 import './Transactions.css'
 
 export default function Transactions() {
-  const { transactions, loading, reload } = useTransactions()
+  const [range, setRange] = useState(currentMonthRange())
+  const { transactions, loading, reload } = useTransactions(range)
   const { activeProfile, isConsolidated } = useProfiles()
+  const { categories } = useCategories()
   const { openEdit, openDuplicate } = useTransactionModal()
   const [filterKind, setFilterKind] = useState('todos')
+  const [filterCategory, setFilterCategory] = useState('todas')
+  const [filterName, setFilterName] = useState('')
   const [search, setSearch] = useState('')
   const [viewingItems, setViewingItems] = useState(null)
   const [contextMenu, setContextMenu] = useState(null) // { x, y, transaction }
@@ -24,6 +29,13 @@ export default function Transactions() {
     let result = transactions
     if (filterKind !== 'todos') {
       result = result.filter((t) => t.kind === filterKind)
+    }
+    if (filterCategory !== 'todas') {
+      result = result.filter((t) => filterCategory === 'sem-categoria' ? !t.category_id : t.category_id === filterCategory)
+    }
+    if (filterName.trim()) {
+      const nameTerm = filterName.trim().toLowerCase()
+      result = result.filter((t) => String(t.name ?? '').toLowerCase().includes(nameTerm))
     }
     if (search.trim()) {
       const term = search.trim().toLowerCase()
@@ -45,7 +57,7 @@ export default function Transactions() {
       })
     }
     return result
-  }, [transactions, filterKind, search])
+  }, [transactions, filterKind, filterCategory, filterName, search])
 
   const handleDeleteConfirmed = async () => {
     if (!deleting) return
@@ -81,31 +93,67 @@ export default function Transactions() {
         </button>
       </div>
 
-      <div className="filter-row">
-        {['todos', 'receita', 'despesa'].map((k) => (
+      <div className="cashflow-filter-panel">
+        <div className="filter-row">
+          {['todos', 'receita', 'despesa'].map((k) => (
+            <button
+              key={k}
+              className={'filter-chip' + (filterKind === k ? ' filter-chip-active' : '')}
+              onClick={() => setFilterKind(k)}
+              type="button"
+            >
+              {k === 'todos' ? 'Todos' : k === 'receita' ? 'Receitas' : 'Despesas'}
+            </button>
+          ))}
+        </div>
+
+        <div className="advanced-filter-row">
+          <div className="filter-field filter-field-date">
+            <span className="filter-label">Data</span>
+            <DateRangeFilter range={range} onChange={setRange} />
+          </div>
+
+          <label className="filter-field">
+            <span className="filter-label">Categoria</span>
+            <select className="filter-select" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+              <option value="todas">Todas as categorias</option>
+              <option value="sem-categoria">Sem categoria</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.icon ? `${category.icon} ` : ''}{category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="filter-field">
+            <span className="filter-label">Nome</span>
+            <input
+              className="filter-input"
+              placeholder="Filtrar por nome"
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+            />
+          </label>
+
+          <label className="filter-field filter-field-search">
+            <span className="filter-label">Pesquisa</span>
+            <input
+              className="filter-input"
+              placeholder="🔍 Descrição, categoria, conta, estabelecimento…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
+
           <button
-            key={k}
-            className={'filter-chip' + (filterKind === k ? ' filter-chip-active' : '')}
-            onClick={() => setFilterKind(k)}
+            className="btn-secondary filters-clear-button"
+            onClick={() => { setFilterKind('todos'); setFilterCategory('todas'); setFilterName(''); setSearch(''); setRange(currentMonthRange()) }}
             type="button"
           >
-            {k === 'todos' ? 'Todos' : k === 'receita' ? 'Receitas' : 'Despesas'}
+            Limpar filtros
           </button>
-        ))}
-      </div>
-
-      <div className="search-row">
-        <input
-          className="search-input"
-          placeholder="🔍 Buscar por descrição, categoria, conta, estabelecimento…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {search && (
-          <button className="search-clear" onClick={() => setSearch('')} type="button" aria-label="Limpar busca">
-            ✕
-          </button>
-        )}
+        </div>
       </div>
 
       {/* Tabela (desktop) */}
@@ -114,7 +162,7 @@ export default function Transactions() {
           <div className="empty-state">Carregando…</div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            {search ? `Nenhum resultado para "${search}".` : 'Nenhum lançamento encontrado.'}
+            {search || filterName || filterCategory !== 'todas' ? 'Nenhum lançamento encontrado para os filtros aplicados.' : 'Nenhum lançamento encontrado.'}
           </div>
         ) : (
           <table className="transactions-table">
@@ -185,7 +233,7 @@ export default function Transactions() {
           <div className="empty-state">Carregando…</div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            {search ? `Nenhum resultado para "${search}".` : 'Nenhum lançamento encontrado.'}
+            {search || filterName || filterCategory !== 'todas' ? 'Nenhum lançamento encontrado para os filtros aplicados.' : 'Nenhum lançamento encontrado.'}
           </div>
         ) : (
           filtered.map((t) => (
