@@ -448,21 +448,6 @@
   line-height: 1;
 }
 
-.topbar-new-btn-kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 10.5px;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 
 .app-content {
   flex: 1;
@@ -580,9 +565,6 @@
     display: none;
   }
 
-  .topbar-new-btn-kbd {
-    display: none;
-  }
 
   .topbar-new-btn {
     padding: 8px 11px;
