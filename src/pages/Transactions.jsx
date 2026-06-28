@@ -6,6 +6,7 @@ import { useTransactionModal } from '../contexts/TransactionModalContext'
 import ContextMenu from '../components/ContextMenu'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { formatCurrency, formatDate } from '../lib/format'
+import { extractDocumentText } from '../lib/documentExtraction'
 import './Transactions.css'
 
 export default function Transactions() {
@@ -76,7 +77,7 @@ export default function Transactions() {
           </p>
         </div>
         <button className="btn-primary import-open-button" type="button" onClick={() => setImporting(true)}>
-          Importar texto/CSV
+          Importar documento
         </button>
       </div>
 
@@ -316,7 +317,18 @@ function MercadoItemsModal({ transaction, onClose }) {
   )
 }
 
-const IMPORT_EMPTY_TEXT = 'Cole linhas como "28/06/2026 Mercado Central -123,45" ou envie um CSV com colunas de data, descrição e valor.'
+const IMPORT_EMPTY_TEXT = 'Cole linhas como "28/06/2026 Mercado Central -123,45", envie CSV/PDF ou anexe imagem para lançar manualmente.'
+const ATTACHMENT_BUCKET = 'financial-attachments'
+const DOCUMENT_ACCEPT = 'image/*,.pdf,.csv,text/csv,text/plain'
+
+function sanitizeFileName(fileName) {
+  return fileName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase()
+}
 
 function normalizeText(value) {
   return String(value ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ')
@@ -431,26 +443,37 @@ function ImportTransactionsModal({ transactions, onClose, onImported }) {
   const { activeProfileId, activeProfile } = useProfiles()
   const [mode, setMode] = useState('text')
   const [rawText, setRawText] = useState('')
+  const [sourceFile, setSourceFile] = useState(null)
+  const [extraction, setExtraction] = useState(null)
   const [suggestions, setSuggestions] = useState([])
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   const selectedCount = suggestions.filter((item) => item.selected).length
 
-  const generateSuggestions = (content = rawText, nextMode = mode) => {
+  const generateSuggestions = (content = rawText, nextMode = mode, attachedFile = sourceFile) => {
     setError('')
     const parsed = nextMode === 'csv' ? parseCsv(content, transactions) : parseFreeText(content, transactions)
     setSuggestions(parsed)
-    if (parsed.length === 0) setError('Não encontrei linhas com data, descrição e valor para sugerir.')
+    if (parsed.length === 0) {
+      const manual = buildSuggestion({ date: new Date().toISOString().slice(0, 10), name: attachedFile?.name || '', amount: 0, source: 'manual', existingTransactions: transactions, index: 0 })
+      setSuggestions([{ ...manual, selected: !!attachedFile, duplicate: false }])
+      setError('Não encontrei dados completos para sugerir. O arquivo será mantido como anexo do lançamento preenchido manualmente.')
+    }
   }
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const content = await file.text()
-    setMode('csv')
-    setRawText(content)
-    generateSuggestions(content, 'csv')
+    setSourceFile(file)
+    setError('')
+    const result = await extractDocumentText(file)
+    setExtraction(result)
+    const nextMode = result.kind === 'csv' ? 'csv' : 'text'
+    setMode(nextMode)
+    setRawText(result.text)
+    generateSuggestions(result.text, nextMode, file)
+    if (result.message) setError(result.message)
   }
 
   const updateSuggestion = (id, field, value) => {
@@ -462,7 +485,8 @@ function ImportTransactionsModal({ transactions, onClose, onImported }) {
       setError('Selecione um perfil específico antes de importar lançamentos.')
       return
     }
-    const payload = suggestions.filter((item) => item.selected).map((item) => ({
+    const selected = suggestions.filter((item) => item.selected)
+    const payload = selected.map((item) => ({
       profile_id: activeProfileId,
       name: item.name.trim(),
       kind: item.kind,
@@ -478,29 +502,74 @@ function ImportTransactionsModal({ transactions, onClose, onImported }) {
     }
 
     setSaving(true)
-    const { error: insertError } = await supabase.from('transactions').insert(payload)
+    const { data: inserted, error: insertError } = await supabase.from('transactions').insert(payload).select('id')
+    if (insertError) {
+      setSaving(false)
+      setError(insertError.message)
+      return
+    }
+
+    if (sourceFile && inserted?.length === 1) {
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError) {
+        setSaving(false)
+        setError(userError.message)
+        return
+      }
+      const transactionId = inserted[0].id
+      const storagePath = [activeProfileId, transactionId, `${Date.now()}-${crypto.randomUUID()}-${sanitizeFileName(sourceFile.name)}`].join('/')
+      const { error: uploadError } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(storagePath, sourceFile, {
+        contentType: sourceFile.type || undefined,
+        upsert: false,
+      })
+      if (uploadError) {
+        setSaving(false)
+        setError(uploadError.message)
+        return
+      }
+      const { error: attachmentError } = await supabase.from('transaction_attachments').insert({
+        transaction_id: transactionId,
+        profile_id: activeProfileId,
+        uploaded_by: userData.user?.id ?? null,
+        bucket_id: ATTACHMENT_BUCKET,
+        storage_path: storagePath,
+        file_name: sourceFile.name,
+        content_type: sourceFile.type || null,
+        file_size: sourceFile.size,
+        source_kind: 'document_origin',
+        extraction_status: extraction?.status || 'not_attempted',
+        extracted_text: extraction?.text || null,
+        extraction_message: extraction?.message || null,
+      })
+      if (attachmentError) {
+        setSaving(false)
+        setError(attachmentError.message)
+        return
+      }
+    }
+
     setSaving(false)
-    if (insertError) setError(insertError.message)
-    else onImported()
+    onImported()
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card import-modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Importação assistida</h2>
+        <h2>Importação documental</h2>
         <p className="modal-context">Perfil: <strong>{activeProfile?.icon} {activeProfile?.name || 'selecione um perfil'}</strong></p>
-        <p className="import-hint">Nada será salvo automaticamente. Revise, edite e marque apenas os lançamentos que deseja criar.</p>
+        <p className="import-hint">Nada será salvo automaticamente. PDFs e CSVs podem gerar prévia; imagens são salvas sem OCR e ficam vinculadas ao lançamento preenchido manualmente.</p>
 
         <div className="kind-toggle">
           <button type="button" className={mode === 'text' ? 'kind-active' : ''} onClick={() => setMode('text')}>Texto colado</button>
-          <button type="button" className={mode === 'csv' ? 'kind-active' : ''} onClick={() => setMode('csv')}>CSV</button>
+          <button type="button" className={mode === 'csv' ? 'kind-active' : ''} onClick={() => setMode('csv')}>CSV/PDF</button>
         </div>
 
         <label className="import-file-button">
-          Ler arquivo CSV
-          <input type="file" accept=".csv,text/csv" onChange={handleFileChange} />
+          Ler PDF, imagem ou CSV
+          <input type="file" accept={DOCUMENT_ACCEPT} onChange={handleFileChange} />
         </label>
 
+        {sourceFile && <p className="document-source-pill">📎 {sourceFile.name} · {extraction?.status || 'aguardando leitura'}</p>}
         <textarea className="import-textarea" value={rawText} onChange={(e) => setRawText(e.target.value)} placeholder={IMPORT_EMPTY_TEXT} rows={6} />
         <div className="import-actions-row">
           <button type="button" className="btn-secondary" onClick={() => generateSuggestions()}>Gerar prévia</button>
