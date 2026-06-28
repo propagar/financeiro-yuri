@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAccounts, useCategories, flattenCategoriesForSelect } from '../hooks/useFinanceData'
 import { useProfiles } from '../contexts/ProfileContext'
@@ -11,6 +11,38 @@ const FREQUENCIES = [
   { value: 'mensal', label: 'Mensal' },
   { value: 'anual', label: 'Anual' },
 ]
+
+const ATTACHMENT_BUCKET = 'financial-attachments'
+const ACCEPTED_ATTACHMENT_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+  'text/csv',
+  'application/csv',
+  'application/vnd.ms-excel',
+]
+const ACCEPTED_ATTACHMENT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf', 'csv']
+const ATTACHMENT_ACCEPT = 'image/*,.pdf,.csv,text/csv'
+
+function sanitizeFileName(fileName) {
+  return fileName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase()
+}
+
+function getFileExtension(fileName) {
+  return fileName.split('.').pop()?.toLowerCase() || ''
+}
+
+function isAcceptedAttachment(file) {
+  const extension = getFileExtension(file.name)
+  return ACCEPTED_ATTACHMENT_TYPES.includes(file.type) || ACCEPTED_ATTACHMENT_EXTENSIONS.includes(extension)
+}
 
 export default function TransactionForm({ transaction, onClose, onSaved }) {
   const { activeProfileId, activeProfile } = useProfiles()
@@ -31,12 +63,79 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
   const [frequency, setFrequency] = useState('mensal')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [attachments, setAttachments] = useState([])
 
   const { categories } = useCategories(kind)
   const categoryOptions = flattenCategoriesForSelect(categories)
   const { accounts } = useAccounts()
 
   const profileId = transaction?.profile_id || activeProfileId
+  const canAttachFiles = !isEdit && kind === 'despesa' && !isRecurring
+  const attachmentSummary = useMemo(() => {
+    if (attachments.length === 0) return 'Nenhum anexo selecionado'
+    return `${attachments.length} anexo${attachments.length > 1 ? 's' : ''} selecionado${attachments.length > 1 ? 's' : ''}`
+  }, [attachments])
+
+  const handleAttachmentChange = (e) => {
+    const selectedFiles = Array.from(e.target.files ?? [])
+    const validFiles = selectedFiles.filter(isAcceptedAttachment)
+
+    if (validFiles.length !== selectedFiles.length) {
+      setError('Envie apenas imagens, PDFs ou CSVs como anexos.')
+    } else {
+      setError('')
+    }
+
+    setAttachments(validFiles)
+  }
+
+  const removeAttachment = (indexToRemove) => {
+    setAttachments((current) => current.filter((_, index) => index !== indexToRemove))
+  }
+
+  const saveAttachments = async (transactionId) => {
+    if (!canAttachFiles || attachments.length === 0) return null
+
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError) return userError
+
+    const uploadedAttachments = []
+
+    for (const file of attachments) {
+      const safeName = sanitizeFileName(file.name)
+      const storagePath = [
+        profileId,
+        transactionId,
+        `${Date.now()}-${crypto.randomUUID()}-${safeName}`,
+      ].join('/')
+
+      const { error: uploadError } = await supabase.storage
+        .from(ATTACHMENT_BUCKET)
+        .upload(storagePath, file, {
+          contentType: file.type || undefined,
+          upsert: false,
+        })
+
+      if (uploadError) return uploadError
+
+      uploadedAttachments.push({
+        transaction_id: transactionId,
+        profile_id: profileId,
+        uploaded_by: userData.user?.id ?? null,
+        bucket_id: ATTACHMENT_BUCKET,
+        storage_path: storagePath,
+        file_name: file.name,
+        content_type: file.type || null,
+        file_size: file.size,
+      })
+    }
+
+    const { error: insertError } = await supabase
+      .from('transaction_attachments')
+      .insert(uploadedAttachments)
+
+    return insertError
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -97,13 +196,21 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
     }
 
     const query = isEdit
-      ? supabase.from('transactions').update(payload).eq('id', transaction.id)
-      : supabase.from('transactions').insert(payload)
+      ? supabase.from('transactions').update(payload).eq('id', transaction.id).select('id').single()
+      : supabase.from('transactions').insert(payload).select('id').single()
 
-    const { error: err } = await query
+    const { data: savedTransaction, error: err } = await query
+
+    if (err) {
+      setSaving(false)
+      setError(err.message)
+      return
+    }
+
+    const attachmentError = await saveAttachments(savedTransaction.id)
     setSaving(false)
 
-    if (err) setError(err.message)
+    if (attachmentError) setError(attachmentError.message)
     else onSaved()
   }
 
@@ -225,6 +332,29 @@ export default function TransactionForm({ transaction, onClose, onSaved }) {
             Observações (opcional)
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </label>
+
+          {canAttachFiles && (
+            <div className="attachments-field">
+              <label>
+                Anexos financeiros (opcional)
+                <input type="file" accept={ATTACHMENT_ACCEPT} multiple onChange={handleAttachmentChange} />
+              </label>
+              <p className="attachments-hint">
+                Adicione imagens, PDFs ou CSVs. A leitura automática desses arquivos ainda não será feita.
+              </p>
+              <p className="attachments-summary">{attachmentSummary}</p>
+              {attachments.length > 0 && (
+                <ul className="attachments-list">
+                  {attachments.map((file, index) => (
+                    <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+                      <span>{file.name}</span>
+                      <button type="button" onClick={() => removeAttachment(index)}>Remover</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {error && <p className="login-error">{error}</p>}
 
