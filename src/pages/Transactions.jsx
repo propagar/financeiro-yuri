@@ -166,6 +166,17 @@ export default function Transactions() {
           </div>
         ) : (
           <table className="transactions-table">
+            <colgroup>
+              <col className="col-date" />
+              <col className="col-description" />
+              <col className="col-category" />
+              {isConsolidated && <col className="col-profile" />}
+              <col className="col-account" />
+              <col className="col-method" />
+              <col className="col-status" />
+              <col className="col-value" />
+              <col className="col-action-width" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Data</th>
@@ -184,22 +195,7 @@ export default function Transactions() {
                 <tr key={t.id} onContextMenu={(e) => handleContextMenu(e, t)}>
                   <td>{formatDate(t.occurred_on)}</td>
                   <td className="col-name">
-                    <div className="transaction-name-cell">
-                      <span className="cell-text transaction-name-text" title={t.name || '—'}>
-                        {t.recurrence_id && <span className="recurring-icon" title="Lançamento recorrente">🔁</span>}
-                        {t.name || '—'}
-                      </span>
-                      {(t.mercado_items?.[0]?.count ?? 0) > 0 && (
-                        <button
-                          className="items-badge"
-                          onClick={() => setViewingItems(t)}
-                          type="button"
-                          title="Ver produtos desta compra"
-                        >
-                          🧾 {t.mercado_items[0].count} itens
-                        </button>
-                      )}
-                    </div>
+
                   </td>
                   <td>
                     <span className="tag cell-text" title={t.categories?.name || '—'} style={{ background: (t.categories?.color || '#94a3b8') + '22', color: t.categories?.color || '#64748b' }}>

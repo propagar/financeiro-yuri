@@ -166,6 +166,8 @@
 
 .transactions-table {
   width: 100%;
+  min-width: 920px;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13.5px;
 }
@@ -183,10 +185,13 @@
 }
 
 .transactions-table td {
+  min-width: 0;
   padding: 11px 16px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .transactions-table tr:last-child td {
@@ -201,9 +206,7 @@
   cursor: context-menu;
 }
 
-.cell-text {
-  display: inline-block;
-  max-width: 100%;
+
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
@@ -211,17 +214,7 @@
 }
 
 .col-name {
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-.transaction-name-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
 
 .transaction-name-text {
   flex: 1 1 auto;
@@ -627,4 +620,5 @@
   font-size: 12px;
   font-weight: 700;
 }
+
 

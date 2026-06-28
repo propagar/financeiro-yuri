@@ -68,6 +68,15 @@
   gap: 12px;
 }
 
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .dashboard-header h1 {
   font-family: var(--font-display);
   font-size: 26px;
