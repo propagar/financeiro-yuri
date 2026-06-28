@@ -124,11 +124,16 @@ export function buildPreviewItem({ date, description, amount, categoryName = '',
 }
 
 export function markDuplicates(items, existingTransactions) {
-  const seen = new Set()
+  const seen = new Map()
   return items.map((item) => {
-    const key = `${item.occurred_on}|${Number(item.amount).toFixed(2)}|${normalizeText(item.name)}|${item.account_id || ''}|${item.external_id || ''}`
-    const duplicated = seen.has(key) || existingTransactions.some((t) => t.occurred_on === item.occurred_on && Number(t.amount).toFixed(2) === Number(item.amount).toFixed(2) && normalizeText(t.name) === normalizeText(item.name) && (!item.account_id || t.account_id === item.account_id))
-    seen.add(key)
-    return duplicated ? { ...item, status: 'duplicado possível', selected: false } : item
+    if (['incompleto', 'erro', 'ignorado', 'importado'].includes(item.status)) return { ...item, duplicate_reason: '', duplicate_match: null }
+    const amount = Number(item.amount)
+    const key = `${item.occurred_on}|${Number.isFinite(amount) ? amount.toFixed(2) : ''}|${normalizeText(item.name)}|${item.account_id || ''}|${item.external_id || ''}`
+    const previewMatch = seen.get(key)
+    const existingMatch = existingTransactions.find((t) => t.occurred_on === item.occurred_on && Number(t.amount).toFixed(2) === amount.toFixed(2) && normalizeText(t.name) === normalizeText(item.name) && (!item.account_id || t.account_id === item.account_id))
+    seen.set(key, item)
+    if (previewMatch) return { ...item, status: 'duplicado possível', selected: false, duplicate_reason: 'Linha parecida encontrada nesta prévia.', duplicate_match: previewMatch }
+    if (existingMatch) return { ...item, status: 'duplicado possível', selected: false, duplicate_reason: 'Lançamento parecido já existe no sistema.', duplicate_match: existingMatch }
+    return { ...item, status: item.status === 'duplicado possível' ? 'pronto' : item.status, duplicate_reason: '', duplicate_match: null }
   })
 }

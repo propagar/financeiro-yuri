@@ -9,7 +9,9 @@ import './BulkImport.css'
 const ATTACHMENT_BUCKET = 'financial-attachments'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const PAYMENT_METHODS = ['Pix', 'Dinheiro', 'Débito', 'Crédito', 'Boleto', 'Transferência']
-const STATUS_OPTIONS = ['todos', 'pronto', 'incompleto', 'duplicado possível', 'erro', 'ignorado', 'importado']
+const STATUS_OPTIONS = ['todos', 'selecionados', 'pronto', 'incompleto', 'duplicado possível', 'erro', 'ignorado', 'importado']
+const TYPE_OPTIONS = ['todos', 'despesa', 'receita']
+const PAGE_SIZE = 50
 
 export default function BulkImport() {
   const { activeProfileId, activeProfile } = useProfiles()
@@ -22,14 +24,32 @@ export default function BulkImport() {
   const [mappingDraft, setMappingDraft] = useState(null)
   const [fileFilter, setFileFilter] = useState('todos')
   const [statusFilter, setStatusFilter] = useState('todos')
+  const [typeFilter, setTypeFilter] = useState('todos')
+  const [search, setSearch] = useState('')
+  const [groupByFile, setGroupByFile] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [page, setPage] = useState(1)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
-  const filteredItems = useMemo(() => items.filter((item) => (fileFilter === 'todos' || item.file_name === fileFilter) && (statusFilter === 'todos' || item.status === statusFilter)), [items, fileFilter, statusFilter])
-  const selectedCount = items.filter((item) => item.selected && ['pronto', 'duplicado possível'].includes(item.status)).length
+  const fileNames = useMemo(() => [...new Set(items.map((item) => item.file_name))], [items])
+  const filteredItems = useMemo(() => items.filter((item) => {
+    const query = normalizeSearch(search)
+    const matchesSearch = !query || [item.name, item.amount, item.occurred_on, item.file_name, item.notes, validationMessages(item).join(' ')].some((value) => normalizeSearch(value).includes(query))
+    const matchesStatus = statusFilter === 'todos' || (statusFilter === 'selecionados' ? item.selected : item.status === statusFilter)
+    return (fileFilter === 'todos' || item.file_name === fileFilter) && matchesStatus && (typeFilter === 'todos' || item.kind === typeFilter) && matchesSearch
+  }), [items, fileFilter, statusFilter, typeFilter, search])
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE))
+  const pagedItems = useMemo(() => filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filteredItems, page])
+  const selectedItems = items.filter((item) => item.selected && canImport(item))
+  const selectedCount = selectedItems.length
+  const summary = useMemo(() => buildSummary(items, selectedItems), [items, selectedItems])
+  const fileSummaries = useMemo(() => fileNames.map((name) => ({ name, ...buildSummary(items.filter((item) => item.file_name === name), selectedItems.filter((item) => item.file_name === name)) })), [fileNames, items, selectedItems])
+  const groupedItems = useMemo(() => fileNames.map((name) => ({ name, items: pagedItems.filter((item) => item.file_name === name), summary: fileSummaries.find((file) => file.name === name) })).filter((group) => group.items.length), [fileNames, pagedItems, fileSummaries])
 
   const addFiles = async (fileList) => {
     setMessage('')
+    setPage(1)
     const incoming = Array.from(fileList ?? [])
     for (const file of incoming) await processFile(file)
   }
@@ -73,7 +93,17 @@ export default function BulkImport() {
     setFiles((current) => [...current, { id, file, name: file.name, size: file.size, kind, status, note }])
   }
   const updateFile = (id, status, note) => setFiles((current) => current.map((item) => item.id === id ? { ...item, status, note } : item))
-  const updateItem = (id, field, value) => setItems((current) => markDuplicates(current.map((item) => item.id === id ? { ...item, [field]: value, status: item.status === 'importado' ? 'importado' : validateStatus({ ...item, [field]: value }) } : item), transactions))
+  const updateItem = (id, field, value) => setItems((current) => markDuplicates(current.map((item) => item.id === id ? normalizeItem({ ...item, [field]: value }, field) : item), transactions))
+  const bulkSelect = (mode) => setItems((current) => current.map((item) => {
+    if (item.status === 'importado') return item
+    if (mode === 'ready') return { ...item, selected: canImport(item) }
+    if (mode === 'none') return { ...item, selected: false }
+    if (mode === 'expenses') return { ...item, selected: item.kind === 'despesa' && canImport(item) }
+    if (mode === 'income') return { ...item, selected: item.kind === 'receita' && canImport(item) }
+    if (mode === 'no-duplicates') return item.status === 'duplicado possível' ? { ...item, selected: false } : item
+    if (mode === 'no-invalid') return canImport(item) ? item : { ...item, selected: false }
+    return item
+  }))
   const removeItem = (id) => setItems((current) => current.map((item) => item.id === id ? { ...item, selected: false, status: 'ignorado' } : item))
   const applyMapping = () => {
     const map = Object.fromEntries(Object.entries(mappingDraft.mapping).map(([key, value]) => [key, value === '' ? -1 : Number(value)]))
@@ -83,10 +113,18 @@ export default function BulkImport() {
     setMappingDraft(null)
   }
 
+  const importSelected = () => {
+    const invalidSelected = items.filter((item) => item.selected && !canImport(item))
+    if (invalidSelected.length) { setMessage('Corrija os itens incompletos ou com erro para poder importar.'); return }
+    if (!selectedCount) { setMessage('Selecione ao menos uma linha pronta para importar.'); return }
+    setShowConfirm(true)
+  }
+
   const confirmImport = async () => {
     if (!activeProfileId) { setMessage('Selecione um perfil específico antes de importar.'); return }
-    const selected = items.filter((item) => item.selected && ['pronto', 'duplicado possível'].includes(item.status))
+    const selected = items.filter((item) => item.selected && canImport(item))
     if (!selected.length) { setMessage('Selecione ao menos uma linha pronta para importar.'); return }
+    setShowConfirm(false)
     setSaving(true)
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError) { setMessage(userError.message); setSaving(false); return }
@@ -109,7 +147,7 @@ export default function BulkImport() {
     if (txError) { setMessage(txError.message); setSaving(false); return }
     await supabase.from('financial_import_items').update({ status: 'imported' }).in('id', (importedItems ?? []).map((item) => item.id))
     await supabase.from('financial_import_sessions').update({ status: 'imported', imported_count: selected.length }).eq('id', session.id)
-    setItems((current) => current.map((item) => item.selected ? { ...item, status: 'importado', selected: false } : item))
+    setItems((current) => current.map((item) => item.selected && canImport(item) ? { ...item, status: 'importado', selected: false } : item))
     setMessage(`${selected.length} lançamento(s) importado(s) com vínculo à sessão.`)
     setSaving(false)
     reload()
@@ -120,8 +158,54 @@ export default function BulkImport() {
     <label className="bulk-dropzone" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files) }}><input type="file" multiple accept={IMPORT_ACCEPT} onChange={(e) => addFiles(e.target.files)} /><strong>Arraste e solte arquivos aqui</strong><span>ou clique para selecionar CSV, PDF, OFX, XLS/XLSX.</span></label>
     {files.length > 0 && <section className="bulk-card"><h2>Arquivos adicionados</h2><div className="bulk-file-list">{files.map((file) => <div key={file.id} className="bulk-file-row"><strong>{file.name}</strong><span>{file.kind.toUpperCase()} · {(file.size / 1024).toFixed(1)} KB</span><em>{file.status}</em><small>{file.note}</small></div>)}</div></section>}
     {mappingDraft && <section className="bulk-card"><h2>Mapeamento manual — {mappingDraft.fileName}</h2><p>Não identificamos todas as colunas. Informe quais campos representam os dados principais.</p><div className="mapping-grid">{['date','description','amount','debit','credit','category'].map((field) => <label key={field}>{field}<select value={mappingDraft.mapping[field]} onChange={(e) => setMappingDraft((current) => ({ ...current, mapping: { ...current.mapping, [field]: e.target.value } }))}><option value="">Não usar</option>{mappingDraft.headers.map((header, index) => <option key={header + index} value={index}>{header}</option>)}</select></label>)}</div><button className="btn-primary" type="button" onClick={applyMapping}>Gerar prévia com este mapeamento</button></section>}
-    <section className="bulk-card"><div className="bulk-preview-head"><div><h2>Encontramos estes lançamentos nos seus arquivos</h2><p>Algumas linhas precisam de revisão. Possíveis duplicidades foram encontradas.</p></div><div className="bulk-filters"><select value={fileFilter} onChange={(e) => setFileFilter(e.target.value)}><option value="todos">Todos os arquivos</option>{[...new Set(items.map((item) => item.file_name))].map((name) => <option key={name}>{name}</option>)}</select><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>{STATUS_OPTIONS.map((status) => <option key={status}>{status}</option>)}</select></div></div><div className="bulk-table-wrap"><table className="bulk-table"><thead><tr><th>Sel.</th><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Categoria</th><th>Conta</th><th>Forma</th><th>Origem</th><th>Arquivo</th><th>Status</th><th>Observações</th><th></th></tr></thead><tbody>{filteredItems.map((item) => <tr key={item.id} className={item.status.includes('duplicado') ? 'duplicate-row' : ''}><td><input type="checkbox" checked={item.selected} disabled={item.status === 'importado'} onChange={(e) => updateItem(item.id, 'selected', e.target.checked)} /></td><td><input type="date" value={item.occurred_on} onChange={(e) => updateItem(item.id, 'occurred_on', e.target.value)} /></td><td><input value={item.name} onChange={(e) => updateItem(item.id, 'name', e.target.value)} /></td><td><input type="number" min="0" step="0.01" value={item.amount} onChange={(e) => updateItem(item.id, 'amount', e.target.value)} /></td><td><select value={item.kind} onChange={(e) => updateItem(item.id, 'kind', e.target.value)}><option value="despesa">gasto</option><option value="receita">entrada</option></select></td><td><select value={item.category_id} onChange={(e) => updateItem(item.id, 'category_id', e.target.value)}><option value="">Sem categoria</option>{categoryOptions.map((cat) => <option key={cat.id} value={cat.id}>{cat.depth ? '↳ ' : ''}{cat.icon} {cat.name}</option>)}</select></td><td><select value={item.account_id} onChange={(e) => updateItem(item.id, 'account_id', e.target.value)}><option value="">Sem conta</option>{accounts.map((acc) => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></td><td><select value={item.payment_method} onChange={(e) => updateItem(item.id, 'payment_method', e.target.value)}><option value="">—</option>{PAYMENT_METHODS.map((p) => <option key={p}>{p}</option>)}</select></td><td>{item.source_type}</td><td>{item.file_name}</td><td><span className={'status-pill status-' + item.status.replace(/\s+/g, '-')}>{item.status}</span></td><td><input value={item.notes} onChange={(e) => updateItem(item.id, 'notes', e.target.value)} /></td><td><button className="btn-secondary" type="button" onClick={() => removeItem(item.id)}>Remover</button></td></tr>)}</tbody></table>{items.length === 0 && <p className="empty-import">A prévia consolidada aparecerá aqui após a leitura dos arquivos.</p>}</div><div className="bulk-actions"><span>{items.length} linha(s) · {selectedCount} selecionada(s)</span><button className="btn-primary" type="button" onClick={confirmImport} disabled={saving || selectedCount === 0}>{saving ? 'Salvando…' : 'Confirmar importação dos selecionados'}</button></div>{message && <p className="login-error">{message}</p>}</section>
+    <section className="bulk-card">
+      <div className="bulk-preview-head"><div><h2>Prévia da importação</h2><p>Revise os lançamentos antes de confirmar. Nada será salvo até você confirmar.</p></div></div>
+      <div className="summary-grid">{[
+        ['Linhas detectadas', summary.total], ['Prontas', summary.ready], ['Incompletas', summary.incomplete], ['Duplicadas possíveis', summary.duplicate], ['Com erro', summary.error], ['Selecionadas', summary.selected], ['Valor selecionado', formatCurrency(summary.selectedAmount)], ['Total de gastos', formatCurrency(summary.expenses)], ['Total de entradas', formatCurrency(summary.income)],
+      ].map(([label, value]) => <div className="summary-card" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+      {fileSummaries.length > 1 && <div className="file-summary-list"><div className="file-summary-title"><strong>Agrupamento por arquivo</strong><label className="checkbox-label"><input type="checkbox" checked={groupByFile} onChange={(e) => setGroupByFile(e.target.checked)} /> Visualizar agrupado</label></div>{fileSummaries.map((file) => <div key={file.name} className="file-summary-row"><strong>Arquivo: {file.name}</strong><span>{file.total} lançamentos encontrados</span><span>{file.ready} prontos</span><span>{file.incomplete} incompletos</span><span>{file.duplicate} possíveis duplicados</span></div>)}</div>}
+      <div className="bulk-toolbar">
+        <input className="bulk-search" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} placeholder="Buscar por descrição, valor, data, arquivo ou observação" />
+        <select value={fileFilter} onChange={(e) => { setFileFilter(e.target.value); setPage(1) }}><option value="todos">Todos os arquivos</option>{fileNames.map((name) => <option key={name}>{name}</option>)}</select>
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>{STATUS_OPTIONS.map((status) => <option key={status}>{status}</option>)}</select>
+        <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}>{TYPE_OPTIONS.map((type) => <option key={type} value={type}>{type === 'todos' ? 'todos os tipos' : type === 'despesa' ? 'gastos' : 'entradas'}</option>)}</select>
+      </div>
+      <div className="bulk-mass-actions"><button type="button" className="btn-secondary" onClick={() => bulkSelect('ready')}>Selecionar todos os prontos</button><button type="button" className="btn-secondary" onClick={() => bulkSelect('none')}>Desmarcar todos</button><button type="button" className="btn-secondary" onClick={() => bulkSelect('expenses')}>Selecionar somente gastos</button><button type="button" className="btn-secondary" onClick={() => bulkSelect('income')}>Selecionar somente entradas</button><button type="button" className="btn-secondary" onClick={() => bulkSelect('no-duplicates')}>Desmarcar duplicados</button><button type="button" className="btn-secondary" onClick={() => bulkSelect('no-invalid')}>Desmarcar inválidos</button></div>
+      <div className="bulk-table-wrap">{(groupByFile ? groupedItems : [{ name: null, items: pagedItems }]).map((group) => <div key={group.name || 'all'}>{group.name && <h3 className="group-heading">Arquivo: {group.name}</h3>}<table className="bulk-table"><thead><tr><th>Sel.</th><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Categoria</th><th>Conta</th><th>Forma</th><th>Arquivo de origem</th><th>Status</th><th>Observação/erro</th><th>Ações</th></tr></thead><tbody>{group.items.map((item) => <tr key={item.id} className={item.status.includes('duplicado') ? 'duplicate-row' : ''}><td><input type="checkbox" checked={item.selected} disabled={item.status === 'importado' || ['incompleto', 'erro'].includes(item.status)} onChange={(e) => updateItem(item.id, 'selected', e.target.checked)} /></td><td><input type="date" value={item.occurred_on} onChange={(e) => updateItem(item.id, 'occurred_on', e.target.value)} /></td><td><input value={item.name} onChange={(e) => updateItem(item.id, 'name', e.target.value)} /></td><td><input type="number" min="0" step="0.01" value={item.amount} onChange={(e) => updateItem(item.id, 'amount', e.target.value)} /></td><td><select value={item.kind} onChange={(e) => updateItem(item.id, 'kind', e.target.value)}><option value="despesa">gasto</option><option value="receita">entrada</option></select></td><td><select value={item.category_id} onChange={(e) => updateItem(item.id, 'category_id', e.target.value)}><option value="">Sem categoria</option>{categoryOptions.map((cat) => <option key={cat.id} value={cat.id}>{cat.depth ? '↳ ' : ''}{cat.icon} {cat.name}</option>)}</select></td><td><select value={item.account_id} onChange={(e) => updateItem(item.id, 'account_id', e.target.value)}><option value="">Sem conta</option>{accounts.map((acc) => <option key={acc.id} value={acc.id}>{acc.name}</option>)}</select></td><td><select value={item.payment_method} onChange={(e) => updateItem(item.id, 'payment_method', e.target.value)}><option value="">—</option>{PAYMENT_METHODS.map((p) => <option key={p}>{p}</option>)}</select></td><td><small>{item.source_type} · {item.file_name}</small></td><td><span className={'status-pill status-' + item.status.replace(/\s+/g, '-')}>{statusLabel(item.status)}</span></td><td><div className="row-notes"><input value={item.notes} onChange={(e) => updateItem(item.id, 'notes', e.target.value)} placeholder="Observação" />{validationMessages(item).map((note) => <small key={note}>{note}</small>)}{item.status === 'duplicado possível' && <div className="duplicate-detail"><strong>{item.duplicate_reason || 'Possível duplicidade encontrada'}</strong><span>{duplicateText(item)}</span><label><input type="checkbox" checked={item.selected} onChange={(e) => updateItem(item.id, 'selected', e.target.checked)} /> Manter selecionado</label></div>}</div></td><td><button className="btn-secondary" type="button" onClick={() => removeItem(item.id)}>Ignorar</button></td></tr>)}</tbody></table></div>)}{items.length === 0 && <p className="empty-import">A prévia consolidada aparecerá aqui após a leitura dos arquivos.</p>}{items.length > 0 && !filteredItems.length && <p className="empty-import">Nenhum lançamento encontrado com os filtros atuais.</p>}</div>
+      <div className="bulk-actions"><span>{filteredItems.length} linha(s) filtrada(s) · {selectedCount} selecionada(s)</span><div className="pager"><button className="btn-secondary" type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Anterior</button><span>Página {page} de {totalPages}</span><button className="btn-secondary" type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>Próxima</button></div><button className="btn-primary" type="button" onClick={importSelected} disabled={saving || selectedCount === 0}>{saving ? 'Salvando…' : 'Importar selecionados'}</button></div>
+      {summary.incomplete + summary.error > 0 && <p className="bulk-warning">Corrija os itens incompletos para poder importar.</p>}{message && <p className="login-error">{message}</p>}
+    </section>
+    {showConfirm && <div className="modal-backdrop" onClick={() => setShowConfirm(false)}><div className="modal-card import-confirm-modal" onClick={(e) => e.stopPropagation()}><h2>Confirmar importação</h2><p>Você está prestes a importar {selectedCount} lançamentos financeiros. Revise os dados antes de confirmar.</p><div className="confirm-summary"><span>Valor total: <strong>{formatCurrency(summary.selectedAmount)}</strong></span><span>Gastos: <strong>{selectedItems.filter((item) => item.kind === 'despesa').length}</strong></span><span>Entradas: <strong>{selectedItems.filter((item) => item.kind === 'receita').length}</strong></span><span>Arquivos: <strong>{[...new Set(selectedItems.map((item) => item.file_name))].join(', ')}</strong></span></div><p className="bulk-warning">Esta ação vai criar lançamentos financeiros reais.</p><div className="import-confirm-actions"><button className="btn-secondary" type="button" onClick={() => setShowConfirm(false)}>Voltar para revisão</button><button className="btn-primary" type="button" onClick={confirmImport} disabled={saving}>{saving ? 'Importando…' : 'Confirmar e salvar'}</button></div></div></div>}
   </div>
+}
+
+
+function normalizeItem(item, field) {
+  if (field === 'selected') return { ...item, selected: Boolean(item.selected) }
+  if (item.status === 'importado') return item
+  const status = validateStatus(item)
+  return { ...item, status, selected: ['incompleto', 'erro'].includes(status) ? false : item.selected }
+}
+
+function canImport(item) { return ['pronto', 'duplicado possível'].includes(item.status) }
+function normalizeSearch(value) { return String(value ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim() }
+function statusLabel(status) { return status === 'pronto' ? 'pronto' : status }
+function formatCurrency(value) { return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }
+function buildSummary(sourceItems, selectedItems) { return { total: sourceItems.length, ready: sourceItems.filter((item) => item.status === 'pronto').length, incomplete: sourceItems.filter((item) => item.status === 'incompleto').length, duplicate: sourceItems.filter((item) => item.status === 'duplicado possível').length, error: sourceItems.filter((item) => item.status === 'erro').length, selected: selectedItems.length, selectedAmount: selectedItems.reduce((sum, item) => sum + Number(item.amount || 0), 0), expenses: selectedItems.filter((item) => item.kind === 'despesa').reduce((sum, item) => sum + Number(item.amount || 0), 0), income: selectedItems.filter((item) => item.kind === 'receita').reduce((sum, item) => sum + Number(item.amount || 0), 0) } }
+function validationMessages(item) {
+  const messages = []
+  if (!item.occurred_on) messages.push('Data inválida')
+  if (!item.name?.trim()) messages.push('Descrição vazia')
+  if (!(Number(item.amount) > 0)) messages.push('Valor não identificado')
+  if (!item.category_id) messages.push('Categoria não definida')
+  if (item.status === 'duplicado possível') messages.push('Possível duplicidade encontrada')
+  if (item.status === 'erro') messages.push(item.notes || 'Erro na leitura da linha')
+  return messages
+}
+function duplicateText(item) {
+  const match = item.duplicate_match
+  if (!match) return 'Há outro lançamento com data, descrição e valor parecidos nesta prévia ou nos lançamentos existentes.'
+  return `${match.occurred_on || 'sem data'} · ${match.name || match.description || 'sem descrição'} · ${formatCurrency(match.amount)}`
 }
 
 function validateStatus(item) {
