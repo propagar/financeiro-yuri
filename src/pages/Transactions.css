@@ -166,8 +166,6 @@
 
 .transactions-table {
   width: 100%;
-  min-width: 920px;
-  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13.5px;
 }
@@ -185,13 +183,10 @@
 }
 
 .transactions-table td {
-  min-width: 0;
   padding: 11px 16px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .transactions-table tr:last-child td {
@@ -206,24 +201,19 @@
   cursor: context-menu;
 }
 
-.transactions-table .col-date { width: 100px; }
-.transactions-table .col-description { width: 28%; }
-.transactions-table .col-category { width: 13%; }
-.transactions-table .col-profile { width: 13%; }
-.transactions-table .col-account { width: 12%; }
-.transactions-table .col-method { width: 10%; }
-.transactions-table .col-status { width: 88px; }
-.transactions-table .col-value { width: 116px; }
-.transactions-table .col-action-width { width: 112px; }
-
 .cell-text {
   display: inline-block;
   max-width: 100%;
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
   white-space: nowrap;
+}
+
+.col-name {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .transaction-name-cell {
@@ -297,9 +287,7 @@
 }
 
 .col-actions {
-  overflow: visible;
   text-align: right;
-  text-overflow: clip;
 }
 
 .col-actions button {
@@ -640,8 +628,3 @@
   font-weight: 700;
 }
 
-@media (max-width: 1040px) and (min-width: 721px) {
-  .transactions-table {
-    min-width: 1040px;
-  }
-}

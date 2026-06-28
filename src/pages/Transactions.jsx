@@ -166,17 +166,6 @@ export default function Transactions() {
           </div>
         ) : (
           <table className="transactions-table">
-            <colgroup>
-              <col className="col-date" />
-              <col className="col-description" />
-              <col className="col-category" />
-              {isConsolidated && <col className="col-profile" />}
-              <col className="col-account" />
-              <col className="col-method" />
-              <col className="col-status" />
-              <col className="col-value" />
-              <col className="col-action-width" />
-            </colgroup>
             <thead>
               <tr>
                 <th>Data</th>
