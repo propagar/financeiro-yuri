@@ -15,6 +15,7 @@ import ProfilesPage from './pages/ProfilesPage'
 import AccessesPage from './pages/AccessesPage'
 import SettingsPage from './pages/SettingsPage'
 import MercadoPage from './pages/MercadoPage'
+import BulkImport from './pages/BulkImport'
 
 function GlobalTransactionModal() {
   const { open, transaction, close, notifySaved } = useTransactionModal()
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="acessos" element={<AccessesPage />} />
               <Route path="configuracoes" element={<SettingsPage />} />
               <Route path="mercado" element={<MercadoPage />} />
+              <Route path="importar-lancamentos" element={<BulkImport />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
